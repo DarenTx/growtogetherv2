@@ -5,9 +5,9 @@ CREATE TABLE public.profiles (
     id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
     first_name TEXT,
     last_name TEXT,
-    email TEXT UNIQUE, 
-    phone TEXT UNIQUE,
-    is_linked BOOLEAN DEFAULT FALSE,
+    email TEXT UNIQUE CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'), 
+    phone TEXT UNIQUE CHECK (phone ~ '^\+[1-9]\d{1,14}$'),
+    is_admin BOOLEAN DEFAULT FALSE,
     email_verified BOOLEAN DEFAULT FALSE,
     phone_verified BOOLEAN DEFAULT FALSE,
     registration_complete BOOLEAN DEFAULT FALSE, 
@@ -20,7 +20,7 @@ CREATE TABLE public.profiles (
 -- ==========================================
 CREATE TABLE public.growth_data (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    email_key TEXT NOT NULL, 
+    email_key TEXT NOT NULL CHECK (email_key ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'), 
     bank_name TEXT NOT NULL,
     is_managed BOOLEAN DEFAULT FALSE, 
     year INTEGER NOT NULL,
@@ -86,6 +86,18 @@ ON public.profiles FOR UPDATE
 TO authenticated
 USING (auth.uid() = id);
 
+CREATE POLICY "Admin can update any profile" 
+ON public.profiles FOR UPDATE 
+TO authenticated
+USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);
+
+CREATE POLICY "Users can insert own profile during auth" 
+ON public.profiles FOR INSERT 
+TO authenticated
+WITH CHECK (auth.uid() = id);
+
 CREATE POLICY "Registered users can view all growth data" 
 ON public.growth_data FOR SELECT 
 TO authenticated
@@ -93,10 +105,38 @@ USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND registration_complete = true)
 );
 
-CREATE POLICY "Authenticated users can view market indexes"
+CREATE POLICY "Users can manage own growth data" 
+ON public.growth_data FOR ALL 
+TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Admin can manage growth data" 
+ON public.growth_data FOR ALL 
+TO authenticated
+USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+)
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);
+
+CREATE POLICY "Registered users can view market indexes"
 ON public.market_indexes FOR SELECT
 TO authenticated
-USING (true);
+USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND registration_complete = true)
+);
+
+CREATE POLICY "Admin can manage market indexes" 
+ON public.market_indexes FOR ALL 
+TO authenticated
+USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+)
+WITH CHECK (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);
 
 -- Requirement: Audit logs visible to any authenticated user
 CREATE POLICY "Authenticated users can view audit logs"
@@ -141,7 +181,8 @@ CREATE TRIGGER audit_market_indexes_trigger AFTER INSERT OR UPDATE OR DELETE ON 
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, phone) VALUES (new.id, new.email, new.phone);
+    INSERT INTO public.profiles (id, email, phone) 
+    VALUES (new.id, LOWER(TRIM(new.email)), new.phone);
     RETURN new;
 END;
 $$;
@@ -150,12 +191,40 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXEC
 
 CREATE OR REPLACE FUNCTION public.complete_registration(p_first_name TEXT, p_last_name TEXT, p_phone TEXT, p_email TEXT, p_invitation_code TEXT)
 RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE v_email TEXT;
+DECLARE 
+    v_email TEXT;
+    v_claimed_count INTEGER;
 BEGIN
-    IF p_invitation_code != 'Fruehling' THEN RAISE EXCEPTION 'Invalid invitation code.'; END IF;
-    SELECT COALESCE(profiles.email, p_email) INTO v_email FROM public.profiles WHERE id = auth.uid();
-    UPDATE public.profiles SET first_name = p_first_name, last_name = p_last_name, phone = COALESCE(profiles.phone, p_phone), email = v_email, registration_complete = true, is_linked = EXISTS (SELECT 1 FROM public.growth_data WHERE email_key = v_email AND user_id IS NULL) WHERE id = auth.uid();
-    UPDATE public.growth_data SET user_id = auth.uid() WHERE email_key = v_email AND user_id IS NULL;
+    -- Validate invitation code
+    IF p_invitation_code != 'Fruehling' THEN 
+        RAISE EXCEPTION 'Invalid invitation code.'; 
+    END IF;
+    
+    -- Get the email to use for matching (normalize to lowercase)
+    SELECT COALESCE(profiles.email, LOWER(TRIM(p_email))) INTO v_email 
+    FROM public.profiles 
+    WHERE id = auth.uid();
+    
+    -- Lock and claim growth_data rows atomically
+    WITH claimed_rows AS (
+        UPDATE public.growth_data 
+        SET user_id = auth.uid() 
+        WHERE email_key = v_email 
+          AND user_id IS NULL
+        RETURNING id
+    )
+    SELECT COUNT(*) INTO v_claimed_count FROM claimed_rows;
+    
+    -- Update profile with registration details
+    UPDATE public.profiles 
+    SET 
+        first_name = p_first_name, 
+        last_name = p_last_name, 
+        phone = COALESCE(profiles.phone, p_phone), 
+        email = v_email, 
+        registration_complete = true
+    WHERE id = auth.uid();
+    
     RETURN true;
 END;
 $$;
@@ -163,7 +232,13 @@ $$;
 CREATE OR REPLACE FUNCTION public.sync_verification_status()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-    UPDATE public.profiles SET email_verified = (new.email_confirmed_at IS NOT NULL), phone_verified = (new.phone_confirmed_at IS NOT NULL), email = COALESCE(new.email, profiles.email), phone = COALESCE(new.phone, profiles.phone) WHERE id = new.id;
+    UPDATE public.profiles 
+    SET 
+        email_verified = (new.email_confirmed_at IS NOT NULL), 
+        phone_verified = (new.phone_confirmed_at IS NOT NULL), 
+        email = COALESCE(LOWER(TRIM(new.email)), profiles.email), 
+        phone = COALESCE(new.phone, profiles.phone) 
+    WHERE id = new.id;
     RETURN new;
 END;
 $$;
