@@ -1,0 +1,134 @@
+@if (loadingProfiles()) {
+  <p class="loading" role="status" aria-live="polite">Loading profiles...</p>
+}
+@if (profileLoadError()) {
+  <p class="banner error" role="alert">{{ profileLoadError() }}</p>
+}
+
+<h1>Enter Historical Data</h1>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate aria-label="Enter historical data form">
+  <div class="field-row">
+    <label for="profile_id">Profile</label>
+    <select
+      id="profile_id"
+      formControlName="profile_id"
+      aria-required="true"
+      (change)="onProfileChange($event)"
+      [attr.aria-invalid]="form.controls.profile_id.invalid && form.controls.profile_id.touched"
+    >
+      <option value="" disabled>Select a profile...</option>
+      @for (p of profiles(); track p.id) {
+        <option [value]="p.id">{{ p.first_name }} {{ p.last_name }} - {{ p.email }}</option>
+      }
+    </select>
+  </div>
+  @if (form.controls.profile_id.invalid && form.controls.profile_id.touched) {
+    <p class="field-error" role="alert">Please select a profile.</p>
+  }
+
+  <div class="field-row">
+    <label for="year_hist">Year</label>
+    <input
+      id="year_hist"
+      type="number"
+      formControlName="year"
+      min="2001"
+      max="2100"
+      aria-required="true"
+      [attr.aria-invalid]="form.controls.year.invalid && form.controls.year.touched"
+    />
+  </div>
+  @if (form.controls.year.invalid && form.controls.year.touched) {
+    <p class="field-error" role="alert">Year must be between 2001 and 2100.</p>
+  }
+
+  <div class="field-row">
+    <label for="month_hist">Month</label>
+    <input
+      id="month_hist"
+      type="number"
+      formControlName="month"
+      min="1"
+      max="12"
+      aria-required="true"
+      [attr.aria-invalid]="form.controls.month.invalid && form.controls.month.touched"
+    />
+  </div>
+  @if (form.controls.month.invalid && form.controls.month.touched) {
+    <p class="field-error" role="alert">Month must be between 1 and 12.</p>
+  }
+
+  <div class="field-row">
+    <label for="bank_name">Bank Name</label>
+    <select id="bank_name" formControlName="bank_name" aria-required="true">
+      @for (opt of bankOptions; track opt) {
+        <option [value]="opt">{{ opt }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="checkbox-row">
+    <span class="checkbox-spacer"></span>
+    <div class="checkbox-field">
+      <input id="is_managed" type="checkbox" formControlName="is_managed" />
+      <label for="is_managed">Is Managed</label>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <label for="growth_pct_hist">Growth %</label>
+    <input
+      id="growth_pct_hist"
+      type="number"
+      formControlName="growth_pct"
+      step="0.01"
+      placeholder="e.g. 7.43"
+      aria-required="true"
+      [attr.aria-invalid]="form.controls.growth_pct.invalid && form.controls.growth_pct.touched"
+    />
+  </div>
+  @if (form.controls.growth_pct.invalid && form.controls.growth_pct.touched) {
+    <p class="field-error" role="alert">A valid growth percent is required.</p>
+  }
+
+  @if (successMessage()) {
+    <p class="banner success" role="status">{{ successMessage() }}</p>
+  }
+  @if (errorMessage()) {
+    <p class="banner error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <div class="actions">
+    <button type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Saving...' : 'Save' }}
+    </button>
+    <button type="button" (click)="clearAll()">Clear All</button>
+  </div>
+</form>
+
+@if (showGrowthData()) {
+  <hr />
+  <h2>Growth Data for {{ selectedProfile()!.first_name }} {{ selectedProfile()!.last_name }}</h2>
+
+  @if (growthData().length === 0) {
+    <p class="empty">No growth data found for this profile.</p>
+  } @else {
+    <div class="list-header">
+      <span>Yr-Mo</span>
+      <span>Bank</span>
+      <span>Managed</span>
+      <span>Growth %</span>
+    </div>
+    <div class="data-list">
+      @for (g of growthData(); track g.id) {
+        <div class="list-row">
+          <span>{{ g.year }}-{{ g.month }}</span>
+          <span>{{ g.bank_name }}</span>
+          <span>{{ g.is_managed ? 'Yes' : 'No' }}</span>
+          <span>{{ g.growth_pct }}%</span>
+        </div>
+      }
+    </div>
+  }
+}

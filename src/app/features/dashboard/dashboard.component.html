@@ -2,6 +2,15 @@
   @if (profile()) {
     <h1>Welcome, {{ profile()!.first_name }}</h1>
     <p>Dashboard content coming soon.</p>
+    @if (isAdmin()) {
+      <nav aria-label="Admin navigation">
+        <ul>
+          <li><a routerLink="/admin/profiles">Enter Profiles</a></li>
+          <li><a routerLink="/admin/market-data">Enter Market Data</a></li>
+          <li><a routerLink="/admin/historical-data">Enter Historical Data</a></li>
+        </ul>
+      </nav>
+    }
     <button type="button" (click)="signOut()">Sign Out</button>
   } @else {
     <p>Loading…</p>

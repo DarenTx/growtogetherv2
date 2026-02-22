@@ -1,21 +1,28 @@
-import { Component, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Router } from '@angular/router';
 import { Profile } from '../../core/models/profile.interface';
 import { SupabaseService } from '../../core/services/supabase.service';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
-  imports: [],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
-  readonly profile = signal<Profile | null>(null);
+  private readonly supabase = inject(SupabaseService);
+  private readonly router = inject(Router);
 
-  constructor(
-    private readonly supabase: SupabaseService,
-    private readonly router: Router,
-  ) {}
+  readonly profile = signal<Profile | null>(null);
+  readonly isAdmin = computed(() => this.profile()?.is_admin ?? false);
 
   async ngOnInit(): Promise<void> {
     const p = await this.supabase.getProfile();

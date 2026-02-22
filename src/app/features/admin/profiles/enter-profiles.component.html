@@ -1,0 +1,87 @@
+<h1>Enter Profiles</h1>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate aria-label="Create profile form">
+
+  <div class="field-row">
+    <label for="first_name">First Name</label>
+    <input
+      id="first_name"
+      type="text"
+      formControlName="first_name"
+      autocomplete="given-name"
+      aria-required="true"
+      [attr.aria-invalid]="form.controls.first_name.invalid && form.controls.first_name.touched"
+    />
+  </div>
+  @if (form.controls.first_name.invalid && form.controls.first_name.touched) {
+    <p class="field-error" role="alert">First name is required.</p>
+  }
+
+  <div class="field-row">
+    <label for="last_name">Last Name</label>
+    <input
+      id="last_name"
+      type="text"
+      formControlName="last_name"
+      autocomplete="family-name"
+      aria-required="true"
+      [attr.aria-invalid]="form.controls.last_name.invalid && form.controls.last_name.touched"
+    />
+  </div>
+  @if (form.controls.last_name.invalid && form.controls.last_name.touched) {
+    <p class="field-error" role="alert">Last name is required.</p>
+  }
+
+  <div class="field-row">
+    <label for="email">Email</label>
+    <input
+      id="email"
+      type="email"
+      formControlName="email"
+      autocomplete="email"
+      aria-required="true"
+      [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
+    />
+  </div>
+  @if (form.controls.email.touched) {
+    @if (form.controls.email.hasError('required')) {
+      <p class="field-error" role="alert">Email is required.</p>
+    } @else if (form.controls.email.hasError('email')) {
+      <p class="field-error" role="alert">Please enter a valid email address.</p>
+    }
+  }
+
+  @if (successMessage()) {
+    <p class="banner success" role="status">{{ successMessage() }}</p>
+  }
+  @if (errorMessage()) {
+    <p class="banner error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <div class="actions">
+    <button type="submit" [disabled]="isSubmitting()">
+      {{ isSubmitting() ? 'Saving' : 'Save Profile' }}
+    </button>
+  </div>
+
+</form>
+
+<hr />
+<h2>Current Profiles</h2>
+
+@if (profiles().length === 0) {
+  <p class="empty">No profiles yet.</p>
+} @else {
+  <div class="list-header">
+    <span>Name</span>
+    <span>Email</span>
+  </div>
+  <div class="profile-list">
+    @for (p of profiles(); track p.id) {
+      <div class="profile-row">
+        <span class="name">{{ p.first_name }} {{ p.last_name }}</span>
+        <span class="email">{{ p.email }}</span>
+      </div>
+    }
+  </div>
+}

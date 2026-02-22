@@ -151,4 +151,37 @@ export class SupabaseService {
     const { error } = await this.client.from('market_indexes').upsert(marketIndex);
     if (error) throw error;
   }
+
+  // ─── Admin ────────────────────────────────────────────────────────────────
+
+  async getAllProfiles(): Promise<Profile[]> {
+    const { data, error } = await this.client
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []) as Profile[];
+  }
+
+  async adminCreateProfile(profileData: {
+    first_name: string;
+    last_name: string;
+    email: string;
+  }): Promise<void> {
+    const { error } = await this.client.from('profiles').insert(profileData);
+    if (error) throw error;
+  }
+
+  async getGrowthDataByEmailKey(emailKey: string): Promise<GrowthData[]> {
+    const { data, error } = await this.client
+      .from('growth_data')
+      .select('*')
+      .eq('email_key', emailKey)
+      .order('year', { ascending: true })
+      .order('month', { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []) as GrowthData[];
+  }
 }

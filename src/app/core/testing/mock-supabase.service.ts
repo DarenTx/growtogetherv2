@@ -46,6 +46,9 @@ export function createMockSupabaseService(): Record<string, any> {
     saveGrowthData: vi.fn().mockResolvedValue(undefined),
     getMarketIndexes: vi.fn().mockResolvedValue([]),
     saveMarketIndex: vi.fn().mockResolvedValue(undefined),
+    getAllProfiles: vi.fn().mockResolvedValue([]),
+    adminCreateProfile: vi.fn().mockResolvedValue(undefined),
+    getGrowthDataByEmailKey: vi.fn().mockResolvedValue([]),
     authCallbackUrl: 'http://localhost/auth/callback',
   };
 }
