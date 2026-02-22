@@ -20,7 +20,7 @@ const DEFAULT_BANK = 'Fidelity Investments';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   templateUrl: './enter-historical-data.component.html',
-  styleUrl: './enter-historical-data.component.scss',
+  styleUrl: './enter-historical-data.component.css',
 })
 export class EnterHistoricalDataComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);

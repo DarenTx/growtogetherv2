@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import {
   isEmail,
@@ -14,9 +14,9 @@ type LoginState = 'idle' | 'loading' | 'sent' | 'error';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss',
+  styleUrl: './login.component.css',
 })
 export class LoginComponent {
   readonly state = signal<LoginState>('idle');

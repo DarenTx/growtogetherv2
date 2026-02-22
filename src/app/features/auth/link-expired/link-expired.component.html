@@ -1,5 +1,15 @@
-<div class="link-expired-container">
-  <h1>Link Expired</h1>
-  <p>This link has expired. Please request a new one.</p>
-  <button type="button" (click)="goToLogin()">Back to Sign In</button>
+<!-- ── Link Expired Page ──────────────────────────────────────────── -->
+<div class="gt-page gt-callback-center">
+  <div class="gt-card gt-card--centered">
+    <div class="gt-callback-icon" aria-hidden="true">⏳</div>
+    <h1 class="gt-page-title gt-text-center">Link Expired</h1>
+    <p class="gt-page-subtitle gt-text-center">
+      This link has expired. Please request a new magic link.
+    </p>
+    <div class="gt-btn-row">
+      <button type="button" class="gt-btn gt-btn-primary" (click)="goToLogin()">
+        Back to Sign In
+      </button>
+    </div>
+  </div>
 </div>

@@ -1,18 +1,79 @@
-<div class="dashboard-container">
-  @if (profile()) {
-    <h1>Welcome, {{ profile()!.first_name }}</h1>
-    <p>Dashboard content coming soon.</p>
-    @if (isAdmin()) {
-      <nav aria-label="Admin navigation">
-        <ul>
-          <li><a routerLink="/admin/profiles">Enter Profiles</a></li>
-          <li><a routerLink="/admin/market-data">Enter Market Data</a></li>
-          <li><a routerLink="/admin/historical-data">Enter Historical Data</a></li>
-        </ul>
-      </nav>
-    }
-    <button type="button" (click)="signOut()">Sign Out</button>
+<!-- ── Dashboard ────────────────────────────────────────────────── -->
+<div class="gt-dash-container">
+  @if (loading()) {
+    <p class="gt-loading">Loading…</p>
+  } @else if (errorMessage()) {
+    <p class="gt-error-page">{{ errorMessage() }}</p>
   } @else {
-    <p>Loading…</p>
+    <div class="gt-dash-header">
+      <div>
+        <h1 class="gt-page-title">Growth Dashboard {{ currentYear }}</h1>
+        <p class="gt-page-subtitle">Welcome, {{ profile()?.first_name }}</p>
+      </div>
+      <nav class="gt-dash-nav" aria-label="Dashboard navigation">
+        @if (isAdmin()) {
+          <a routerLink="/admin/profiles" class="gt-nav-link">Profiles</a>
+          <a routerLink="/admin/market-data" class="gt-nav-link">Market Data</a>
+          <a routerLink="/admin/historical-data" class="gt-nav-link">Historical Data</a>
+        }
+        <button type="button" class="gt-sign-out" (click)="signOut()">Sign Out</button>
+      </nav>
+    </div>
+
+    <div class="gt-table-wrap">
+      <table class="gt-table" aria-label="Annual growth data">
+        <thead>
+          <tr>
+            <th
+              class="col-name sortable"
+              scope="col"
+              [attr.aria-sort]="
+                sortColumn() === 'name'
+                  ? sortDirection() === 'asc'
+                    ? 'ascending'
+                    : 'descending'
+                  : 'none'
+              "
+              (click)="sortBy('name')"
+            >
+              Name{{ sortIndicator('name') }}
+            </th>
+            @for (month of months; track $index) {
+              <th
+                class="col-month sortable"
+                scope="col"
+                [attr.aria-sort]="
+                  sortColumn() === monthSortId($index)
+                    ? sortDirection() === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none'
+                "
+                (click)="sortBy(monthSortId($index))"
+              >
+                {{ month }}{{ sortIndicator(monthSortId($index)) }}
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.profileId) {
+            <tr>
+              <td class="col-name">{{ row.lastName }}, {{ row.firstName }}</td>
+              @for (val of row.months; track $index) {
+                <td
+                  class="col-month"
+                  [class.positive]="val !== null && val > 0"
+                  [class.negative]="val !== null && val < 0"
+                  [class.zero]="val !== null && val === 0"
+                >
+                  {{ formatPct(val) }}
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 </div>

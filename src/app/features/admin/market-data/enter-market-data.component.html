@@ -1,101 +1,114 @@
-<h1>Enter Market Data</h1>
+<!-- ── Enter Market Data (Admin) ─────────────────────────────── -->
+<div class="gt-page">
+  <h1 class="gt-page-title">Enter Market Data</h1>
 
-<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate aria-label="Enter market data form">
-  <div class="field-row">
-    <label for="index_name">Index Name</label>
-    <select id="index_name" formControlName="index_name" aria-required="true">
-      @for (opt of indexOptions; track opt) {
-        <option [value]="opt">{{ opt }}</option>
-      }
-    </select>
-  </div>
-  @if (form.controls.index_name.invalid && form.controls.index_name.touched) {
-    <p class="field-error" role="alert">Index name is required.</p>
-  }
-
-  <div class="field-row">
-    <label for="year">Year</label>
-    <input
-      id="year"
-      type="number"
-      formControlName="year"
-      min="2001"
-      max="2100"
-      aria-required="true"
-      [attr.aria-invalid]="form.controls.year.invalid && form.controls.year.touched"
-    />
-  </div>
-  @if (form.controls.year.invalid && form.controls.year.touched) {
-    <p class="field-error" role="alert">Year must be between 2001 and 2100.</p>
-  }
-
-  <div class="field-row">
-    <label for="month">Month</label>
-    <input
-      id="month"
-      type="number"
-      formControlName="month"
-      min="1"
-      max="12"
-      aria-required="true"
-      [attr.aria-invalid]="form.controls.month.invalid && form.controls.month.touched"
-    />
-  </div>
-  @if (form.controls.month.invalid && form.controls.month.touched) {
-    <p class="field-error" role="alert">Month must be between 1 and 12.</p>
-  }
-
-  <div class="field-row">
-    <label for="growth_pct">Growth %</label>
-    <input
-      id="growth_pct"
-      type="number"
-      formControlName="growth_pct"
-      step="0.01"
-      placeholder="e.g. 7.43"
-      aria-required="true"
-      [attr.aria-invalid]="form.controls.growth_pct.invalid && form.controls.growth_pct.touched"
-    />
-  </div>
-  @if (form.controls.growth_pct.invalid && form.controls.growth_pct.touched) {
-    <p class="field-error" role="alert">A valid growth percent is required.</p>
-  }
-
-  @if (successMessage()) {
-    <p class="banner success" role="status">{{ successMessage() }}</p>
-  }
-  @if (errorMessage()) {
-    <p class="banner error" role="alert">{{ errorMessage() }}</p>
-  }
-
-  <div class="actions">
-    <button type="submit" [disabled]="isSubmitting()">
-      {{ isSubmitting() ? 'Saving...' : 'Save' }}
-    </button>
-    <button type="button" (click)="clearAll()">Clear All</button>
-  </div>
-</form>
-
-<hr />
-<h2>Market Indexes</h2>
-
-@if (indexes().length === 0) {
-  <p class="empty">No data yet.</p>
-} @else {
-  <div class="list-header">
-    <span>Index</span>
-    <span>Year</span>
-    <span>Month</span>
-    <span>Growth %</span>
-  </div>
-  <div class="data-list">
-    @for (idx of indexes(); track idx.id) {
-      <div class="list-row">
-        <span>{{ idx.index_name }}</span>
-        <span>{{ idx.year }}</span>
-        <span>{{ idx.month }}</span>
-        <span>{{ idx.growth_pct }}%</span>
+  <div class="gt-card">
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSubmit()"
+      novalidate
+      aria-label="Enter market data form"
+      class="gt-form"
+    >
+      <div class="gt-field">
+        <label class="gt-label" for="index_name">Index Name</label>
+        <select id="index_name" formControlName="index_name" aria-required="true" class="gt-select">
+          @for (opt of indexOptions; track opt) {
+            <option [value]="opt">{{ opt }}</option>
+          }
+        </select>
+        @if (form.controls.index_name.invalid && form.controls.index_name.touched) {
+          <p class="gt-field-error" role="alert">Index name is required.</p>
+        }
       </div>
-    }
+
+      <div class="gt-field">
+        <label class="gt-label" for="year">Year</label>
+        <input
+          id="year"
+          type="number"
+          formControlName="year"
+          min="2001"
+          max="2100"
+          aria-required="true"
+          class="gt-input"
+          [attr.aria-invalid]="form.controls.year.invalid && form.controls.year.touched"
+        />
+        @if (form.controls.year.invalid && form.controls.year.touched) {
+          <p class="gt-field-error" role="alert">Year must be between 2001 and 2100.</p>
+        }
+      </div>
+
+      <div class="gt-field">
+        <label class="gt-label" for="month">Month</label>
+        <input
+          id="month"
+          type="number"
+          formControlName="month"
+          min="1"
+          max="12"
+          aria-required="true"
+          class="gt-input"
+          [attr.aria-invalid]="form.controls.month.invalid && form.controls.month.touched"
+        />
+        @if (form.controls.month.invalid && form.controls.month.touched) {
+          <p class="gt-field-error" role="alert">Month must be between 1 and 12.</p>
+        }
+      </div>
+
+      <div class="gt-field">
+        <label class="gt-label" for="growth_pct">Growth %</label>
+        <input
+          id="growth_pct"
+          type="number"
+          formControlName="growth_pct"
+          step="0.01"
+          placeholder="e.g. 7.43"
+          aria-required="true"
+          class="gt-input"
+          [attr.aria-invalid]="form.controls.growth_pct.invalid && form.controls.growth_pct.touched"
+        />
+        @if (form.controls.growth_pct.invalid && form.controls.growth_pct.touched) {
+          <p class="gt-field-error" role="alert">A valid growth percent is required.</p>
+        }
+      </div>
+
+      @if (successMessage()) {
+        <div class="gt-banner gt-banner-success" role="status">{{ successMessage() }}</div>
+      }
+      @if (errorMessage()) {
+        <div class="gt-banner gt-banner-error" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <div class="gt-btn-row">
+        <button type="submit" class="gt-btn gt-btn-primary" [disabled]="isSubmitting()">
+          {{ isSubmitting() ? 'Saving…' : 'Save' }}
+        </button>
+        <button type="button" class="gt-btn gt-btn-ghost" (click)="clearAll()">Clear All</button>
+      </div>
+    </form>
   </div>
-}
+
+  <h2 class="gt-section-title">Market Indexes</h2>
+
+  @if (indexes().length === 0) {
+    <p class="gt-empty">No data yet.</p>
+  } @else {
+    <div class="gt-list">
+      <div class="gt-list-header">
+        <span>Index</span>
+        <span>Year</span>
+        <span>Month</span>
+        <span>Growth %</span>
+      </div>
+      @for (idx of indexes(); track idx.id) {
+        <div class="gt-list-row">
+          <span>{{ idx.index_name }}</span>
+          <span>{{ idx.year }}</span>
+          <span>{{ idx.month }}</span>
+          <span>{{ idx.growth_pct }}%</span>
+        </div>
+      }
+    </div>
+  }
+</div>

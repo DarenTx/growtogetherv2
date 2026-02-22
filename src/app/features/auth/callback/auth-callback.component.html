@@ -1,11 +1,19 @@
-<div class="callback-container">
-  @if (status() === 'loading') {
-    <p>Signing you in…</p>
-  } @else {
-    <div role="alert">
-      <h1>Something went wrong</h1>
-      <p>{{ errorMessage() }}</p>
-      <button type="button" (click)="goToLogin()">Back to Sign In</button>
-    </div>
-  }
+<!-- ── Auth Callback Page ─────────────────────────────────────────── -->
+<div class="gt-page gt-callback-center">
+  <div class="gt-card gt-card--centered">
+    @if (status() === 'loading') {
+      <p class="gt-loading">Signing you in…</p>
+    } @else {
+      <div role="alert">
+        <div class="gt-callback-icon" aria-hidden="true">⚠️</div>
+        <h1 class="gt-page-title gt-text-center">Something went wrong</h1>
+        <p class="gt-page-subtitle gt-text-center">{{ errorMessage() }}</p>
+        <div class="gt-btn-row">
+          <button type="button" class="gt-btn gt-btn-primary" (click)="goToLogin()">
+            Back to Sign In
+          </button>
+        </div>
+      </div>
+    }
+  </div>
 </div>

@@ -1,0 +1,9 @@
+:host {
+  display: block;
+}
+
+/* Dashboard uses full-width layout (table needs horizontal space) */
+.gt-dash-container {
+  padding: 1.25rem 1rem 3rem;
+  animation: fade-in 0.2s ease-out;
+}

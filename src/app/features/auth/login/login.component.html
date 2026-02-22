@@ -1,60 +1,73 @@
-<div class="login-container">
-  @if (state() === 'sent') {
-    <div class="sent-message">
-      <h1>Check your messages</h1>
-      <p>
-        We sent a magic link to <strong>{{ sentTo() }}</strong
-        >.
-      </p>
-      <p>Click the link in the message to sign in. The link expires in 1 hour.</p>
-      <button type="button" (click)="tryAgain()">Use a different address</button>
-    </div>
-  } @else {
-    <h1>Sign in to Grow Together</h1>
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <div class="field">
-        <label for="identifier">Email or Phone Number</label>
-        <input
-          id="identifier"
-          type="text"
-          formControlName="identifier"
-          placeholder="Enter your email or phone number"
-          autocomplete="email"
-          (blur)="onIdentifierBlur()"
-          [attr.aria-invalid]="
-            (identifierControl.invalid && identifierControl.touched) || phoneError() ? 'true' : null
-          "
-        />
-
-        @if (identifierControl.invalid && identifierControl.touched) {
-          <span class="field-error">This field is required.</span>
-        }
-
-        @if (phoneError()) {
-          <span class="field-error">{{ phoneError() }}</span>
-          <span class="field-hint">Examples: (212) 555-1234 or +44 20 7123 4567</span>
-        }
-
-        <p class="help-text">
-          <strong>Examples:</strong><br />
-          • Email: user&#64;example.com<br />
-          • USA Phone: (212) 555-1234 or 2125551234<br />
-          • International: +44 20 7123 4567
+<!-- ── Login Page ────────────────────────────────────────────────── -->
+<div class="gt-page gt-login-center">
+  <div class="gt-card">
+    @if (state() === 'sent') {
+      <!-- ── Magic link sent ── -->
+      <div class="gt-sent-state">
+        <div class="gt-sent-icon" aria-hidden="true">✉️</div>
+        <h1 class="gt-page-title gt-text-center">Check your messages</h1>
+        <p class="gt-page-subtitle gt-text-center">
+          We sent a magic link to <strong>{{ sentTo() }}</strong
+          >. Click it to sign in — it expires in 1 hour.
         </p>
+        <div class="gt-btn-row">
+          <button type="button" class="gt-btn gt-btn-secondary" (click)="tryAgain()">
+            Use a different address
+          </button>
+        </div>
       </div>
+    } @else {
+      <!-- ── Sign-in form ── -->
+      <h1 class="gt-page-title">Sign in</h1>
+      <p class="gt-page-subtitle">Enter your email or phone to receive a magic link.</p>
 
-      @if (state() === 'error') {
-        <div class="error-banner" role="alert">{{ errorMessage() }}</div>
-      }
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="gt-form">
+        <div class="gt-field">
+          <label class="gt-label" for="identifier">Email or Phone Number</label>
+          <input
+            id="identifier"
+            type="text"
+            formControlName="identifier"
+            placeholder="e.g. user@example.com or (212) 555-1234"
+            autocomplete="email"
+            (blur)="onIdentifierBlur()"
+            class="gt-input"
+            [attr.aria-invalid]="
+              (identifierControl.invalid && identifierControl.touched) || phoneError()
+                ? 'true'
+                : null
+            "
+          />
 
-      <button type="submit" [disabled]="state() === 'loading'">
-        @if (state() === 'loading') {
-          Sending…
-        } @else {
-          Send Magic Link
+          @if (identifierControl.invalid && identifierControl.touched) {
+            <span class="gt-field-error field-error">This field is required.</span>
+          }
+
+          @if (phoneError()) {
+            <span class="gt-field-error field-error">{{ phoneError() }}</span>
+          }
+
+          <p class="gt-help-text">
+            • Email: user&#64;example.com<br />
+            • USA Phone: (212) 555-1234<br />
+            • International: +44 20 7123 4567
+          </p>
+        </div>
+
+        @if (state() === 'error') {
+          <div class="gt-banner gt-banner-error" role="alert">{{ errorMessage() }}</div>
         }
-      </button>
-    </form>
-  }
+
+        <div class="gt-btn-row">
+          <button type="submit" class="gt-btn gt-btn-primary" [disabled]="state() === 'loading'">
+            @if (state() === 'loading') {
+              Sending…
+            } @else {
+              Send Login Link
+            }
+          </button>
+        </div>
+      </form>
+    }
+  </div>
 </div>

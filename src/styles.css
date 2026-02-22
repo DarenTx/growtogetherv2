@@ -1,0 +1,563 @@
+@import 'tailwindcss';
+
+/* ═══════════════════════════════════════════════════════════════
+   GROW TOGETHER — Design Tokens
+   Forest-green brand palette, mobile-first PWA
+   ═══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Brand palette: Forest Green ─────────────────────────── */
+  --color-brand-50: oklch(97.5% 0.025 145);
+  --color-brand-100: oklch(94% 0.055 145);
+  --color-brand-200: oklch(88% 0.1 147);
+  --color-brand-300: oklch(78% 0.155 150);
+  --color-brand-400: oklch(66% 0.185 150);
+  --color-brand-500: oklch(54% 0.2 152);
+  --color-brand-600: oklch(44% 0.175 152);
+  --color-brand-700: oklch(35% 0.14 152);
+  --color-brand-800: oklch(27% 0.105 152);
+  --color-brand-900: oklch(20% 0.07 152);
+
+  /* ── Gold accent ──────────────────────────────────────────── */
+  --color-gold-400: oklch(82% 0.17 85);
+  --color-gold-500: oklch(74% 0.18 80);
+
+  /* ── Semantic aliases ─────────────────────────────────────── */
+  --color-primary: oklch(44% 0.175 152); /* brand-600 */
+  --color-primary-hover: oklch(35% 0.14 152); /* brand-700 */
+  --color-primary-active: oklch(27% 0.105 152); /* brand-800 */
+  --color-primary-light: oklch(97.5% 0.025 145); /* brand-50  */
+
+  --color-header-bg: oklch(35% 0.14 152); /* brand-700 */
+  --color-header-text: oklch(99% 0.005 145);
+
+  /* ── Surfaces ─────────────────────────────────────────────── */
+  --color-surface: oklch(98% 0.01 145);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-border: oklch(90% 0.018 145);
+
+  /* ── Text ─────────────────────────────────────────────────── */
+  --color-text-base: oklch(18% 0.015 155);
+  --color-text-secondary: oklch(42% 0.015 155);
+  --color-text-muted: oklch(62% 0.012 155);
+  --color-text-on-primary: oklch(99% 0.005 145);
+
+  /* ── Feedback ─────────────────────────────────────────────── */
+  --color-error: oklch(57% 0.22 25);
+  --color-error-light: oklch(96% 0.025 25);
+  --color-success: oklch(50% 0.18 152);
+  --color-success-light: oklch(95% 0.03 152);
+
+  /* ── Typography ───────────────────────────────────────────── */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* ── Animations ───────────────────────────────────────────── */
+  --animate-fade-in: fade-in 0.2s ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE RESETS
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-text-base);
+    min-height: 100dvh;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SHARED COMPONENT CLASSES  (gt-*)
+   Used across all feature components; global so they bypass
+   Angular's view-encapsulation scoping.
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* ── Page shell ─────────────────────────────────────────────── */
+  .gt-page {
+    padding: 1.25rem 1rem 3rem;
+    max-width: 40rem;
+    margin-inline: auto;
+    animation: fade-in 0.2s ease-out;
+  }
+
+  /* ── Card ───────────────────────────────────────────────────── */
+  .gt-card {
+    background: var(--color-surface-raised);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow:
+      0 1px 3px rgb(0 0 0 / 0.07),
+      0 4px 16px rgb(0 0 0 / 0.05);
+  }
+
+  /* ── Typography ─────────────────────────────────────────────── */
+  .gt-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-base);
+    margin: 0 0 0.25rem;
+    line-height: 1.2;
+  }
+
+  .gt-page-subtitle {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    margin: 0 0 1.25rem;
+  }
+
+  .gt-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-base);
+    margin: 2rem 0 0.875rem;
+  }
+
+  /* ── Forms ──────────────────────────────────────────────────── */
+  .gt-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .gt-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3125rem;
+  }
+
+  .gt-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .gt-input,
+  .gt-select {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0 0.875rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: 0.625rem;
+    background: var(--color-surface-raised);
+    color: var(--color-text-base);
+    font-size: 1rem;
+    font-family: inherit;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .gt-input:focus,
+  .gt-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-primary) 18%, transparent);
+  }
+
+  .gt-input[aria-invalid='true'],
+  .gt-select[aria-invalid='true'] {
+    border-color: var(--color-error);
+  }
+
+  .gt-input[type='number'] {
+    padding-right: 0.5rem;
+  }
+
+  .gt-field-error {
+    font-size: 0.8125rem;
+    color: var(--color-error);
+  }
+
+  .gt-field-hint {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+  }
+
+  .gt-help-text {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    line-height: 1.6;
+  }
+
+  /* ── Checkbox row ───────────────────────────────────────────── */
+  .gt-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 3rem;
+  }
+
+  .gt-checkbox-row input[type='checkbox'] {
+    width: 1.25rem;
+    height: 1.25rem;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .gt-checkbox-row label {
+    font-size: 1rem;
+    color: var(--color-text-base);
+    cursor: pointer;
+  }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  .gt-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 3rem;
+    padding: 0 1.25rem;
+    border-radius: 0.625rem;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition:
+      background-color 0.15s,
+      opacity 0.15s,
+      box-shadow 0.15s;
+    text-decoration: none;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .gt-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .gt-btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-text-on-primary);
+    width: 100%;
+    box-shadow: 0 2px 6px color-mix(in oklch, var(--color-primary) 35%, transparent);
+  }
+
+  .gt-btn-primary:not([disabled]):hover {
+    background-color: var(--color-primary-hover);
+  }
+  .gt-btn-primary:not([disabled]):active {
+    background-color: var(--color-primary-active);
+  }
+
+  .gt-btn-secondary {
+    background-color: transparent;
+    color: var(--color-primary);
+    border: 1.5px solid var(--color-primary);
+    width: 100%;
+  }
+
+  .gt-btn-secondary:not([disabled]):hover {
+    background-color: var(--color-primary-light);
+  }
+
+  .gt-btn-ghost {
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  .gt-btn-ghost:hover {
+    background-color: var(--color-surface);
+  }
+
+  /* ── Button row ─────────────────────────────────────────────── */
+  .gt-btn-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  /* ── Alerts & banners ───────────────────────────────────────── */
+  .gt-banner {
+    padding: 0.75rem 1rem;
+    border-radius: 0.625rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .gt-banner-error {
+    background-color: var(--color-error-light);
+    color: var(--color-error);
+    border: 1px solid oklch(57% 0.12 25 / 0.35);
+  }
+
+  .gt-banner-success {
+    background-color: var(--color-success-light);
+    color: var(--color-success);
+    border: 1px solid oklch(50% 0.1 152 / 0.35);
+  }
+
+  /* ── Divider ────────────────────────────────────────────────── */
+  .gt-divider {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 1.5rem 0;
+  }
+
+  /* ── Admin data lists ───────────────────────────────────────── */
+  .gt-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  .gt-list-header {
+    display: grid;
+    padding: 0.625rem 1rem;
+    background-color: var(--color-brand-50);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .gt-list-row {
+    display: grid;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.9375rem;
+    background-color: var(--color-surface-raised);
+    transition: background-color 0.1s;
+  }
+
+  .gt-list-row:nth-child(even) {
+    background-color: var(--color-surface);
+  }
+  .gt-list-row:hover {
+    background-color: var(--color-brand-50);
+  }
+  .gt-list-row:nth-child(even):hover {
+    background-color: var(--color-brand-50);
+  }
+
+  .gt-empty {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 2rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  /* ── Auth-callback & link-expired centred layout ──────────── */
+  .gt-callback-center {
+    min-height: calc(100dvh - 3.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gt-callback-icon {
+    font-size: 3rem;
+    line-height: 1;
+    margin-bottom: 0.75rem;
+  }
+
+  /* ── Status messages ────────────────────────────────────────── */
+  .gt-loading {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 3rem 1rem;
+    font-size: 1rem;
+  }
+
+  .gt-error-page {
+    text-align: center;
+    color: var(--color-error);
+    padding: 3rem 1rem;
+    font-size: 1rem;
+  }
+
+  /* ── Dashboard nav ──────────────────────────────────────────── */
+  .gt-dash-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .gt-dash-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .gt-nav-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-primary);
+    text-decoration: none;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.5rem;
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.15s;
+  }
+
+  .gt-nav-link:hover {
+    background-color: var(--color-primary-light);
+  }
+
+  .gt-sign-out {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: none;
+    border: 1.5px solid var(--color-border);
+    padding: 0.375rem 0.875rem;
+    border-radius: 0.5rem;
+    min-height: 2.5rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition:
+      border-color 0.15s,
+      color 0.15s;
+  }
+
+  .gt-sign-out:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+  }
+
+  /* ── Dashboard table ────────────────────────────────────────── */
+  .gt-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
+  }
+
+  .gt-table {
+    border-collapse: collapse;
+    min-width: 860px;
+    width: 100%;
+    font-size: 0.875rem;
+  }
+
+  .gt-table th,
+  .gt-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .gt-table th {
+    background-color: var(--color-brand-50);
+    font-weight: 600;
+    text-align: center;
+    color: var(--color-text-secondary);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .gt-table th.sortable {
+    cursor: pointer;
+  }
+  .gt-table th.sortable:hover {
+    background-color: var(--color-brand-100);
+  }
+
+  .gt-table th.col-name,
+  .gt-table td.col-name {
+    text-align: left;
+    min-width: 160px;
+    position: sticky;
+    left: 0;
+    background-color: inherit;
+    z-index: 1;
+  }
+
+  .gt-table th.col-name {
+    z-index: 2;
+  }
+  .gt-table th.col-month {
+    min-width: 72px;
+  }
+
+  .gt-table tbody tr {
+    background-color: var(--color-surface-raised);
+  }
+  .gt-table tbody tr:nth-child(even) {
+    background-color: var(--color-surface);
+  }
+  .gt-table tbody tr:hover {
+    background-color: var(--color-brand-50);
+  }
+
+  .gt-table td.positive {
+    color: var(--color-success);
+    font-weight: 500;
+  }
+  .gt-table td.negative {
+    color: var(--color-error);
+    font-weight: 500;
+  }
+  .gt-table td.zero {
+    color: var(--color-text-muted);
+  }
+  .gt-table td.col-month {
+    color: var(--color-text-muted);
+  }
+
+  .gt-table td.col-month.positive,
+  .gt-table td.col-month.negative,
+  .gt-table td.col-month.zero {
+    color: unset;
+  }
+
+  /* ── Utility helpers ────────────────────────────────────────── */
+  .gt-text-center {
+    text-align: center;
+  }
+  .gt-mt-4 {
+    margin-top: 1rem;
+  }
+  .gt-text-muted {
+    color: var(--color-text-secondary);
+  }
+  .gt-card--centered {
+    text-align: center;
+  }
+}

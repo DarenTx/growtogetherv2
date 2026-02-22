@@ -1,21 +1,13 @@
 :host {
   display: block;
-  padding: 1.5rem;
-  max-width: 640px;
-  margin: 0 auto;
-  font-family: inherit;
 }
 
-h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-}
+/* All visual styles use gt-* global classes from styles.css */
 
-h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
+/* Profile list column layout */
+.gt-list-header,
+.gt-list-row {
+  grid-template-columns: 1fr 1fr;
 }
 
 /* ── Form grid: label col | field col ── */
@@ -65,18 +57,18 @@ h2 {
   border-radius: 4px;
   font-size: 0.875rem;
   margin-bottom: 1rem;
+}
 
-  &.success {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    color: #15803d;
-  }
+.banner.success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
 
-  &.error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #b91c1c;
-  }
+.banner.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
 }
 
 /* ── Actions ── */
@@ -94,14 +86,15 @@ button[type='submit'] {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.875rem;
+}
 
-  &:hover {
-    background: #1d4ed8;
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+button[type='submit']:hover {
+  background: #1d4ed8;
+}
+
+button[type='submit']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 button[type='button'] {
@@ -112,10 +105,10 @@ button[type='button'] {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.875rem;
+}
 
-  &:hover {
-    background: #d1d5db;
-  }
+button[type='button']:hover {
+  background: #d1d5db;
 }
 
 /* ── Divider ── */
@@ -143,29 +136,31 @@ hr {
   border: 1px solid #e5e7eb;
   border-radius: 0 0 4px 4px;
   overflow: hidden;
+}
 
-  .profile-row {
-    display: grid;
-    grid-template-columns: 11rem 1fr;
-    gap: 1rem;
-    padding: 0.625rem 0.875rem;
-    font-size: 0.875rem;
-    border-bottom: 1px solid #e5e7eb;
+.profile-list .profile-row {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 1rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #e5e7eb;
+}
 
-    &:last-child {
-      border-bottom: none;
-    }
-    &:nth-child(even) {
-      background: #f9fafb;
-    }
+.profile-list .profile-row:last-child {
+  border-bottom: none;
+}
 
-    .name {
-      font-weight: 500;
-    }
-    .email {
-      color: #4b5563;
-    }
-  }
+.profile-list .profile-row:nth-child(even) {
+  background: #f9fafb;
+}
+
+.profile-list .profile-row .name {
+  font-weight: 500;
+}
+
+.profile-list .profile-row .email {
+  color: #4b5563;
 }
 
 .empty {

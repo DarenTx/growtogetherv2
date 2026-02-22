@@ -31,7 +31,11 @@ describe('DashboardComponent', () => {
     router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
-    await fixture.whenStable();
+    // In a zoneless/Vitest environment whenStable() can resolve before the
+    // component's Promise.all completes. The setTimeout(0) flushes the
+    // microtask queue so all signal writes from ngOnInit are committed before
+    // the final detectChanges re-renders the OnPush view.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
   });
 
@@ -45,21 +49,21 @@ describe('DashboardComponent', () => {
     expect(compiled.textContent).toContain(MOCK_PROFILE_COMPLETE.first_name);
   });
 
-  it('shows loading state before profile loads', async () => {
-    // Reset and start fresh
-    let resolveProfile!: (v: typeof MOCK_PROFILE_COMPLETE) => void;
-    mockService['getProfile'] = vi.fn().mockImplementation(
-      () =>
-        new Promise<typeof MOCK_PROFILE_COMPLETE>((res) => {
-          resolveProfile = res;
-        }),
-    );
+  it('shows loading state before data loads', async () => {
+    // Reset and start fresh – block all three parallel calls
+    let resolveAll!: () => void;
+    const pending = new Promise<void>((res) => {
+      resolveAll = res;
+    });
+    mockService['getProfile'] = vi.fn().mockReturnValue(pending.then(() => MOCK_PROFILE_COMPLETE));
+    mockService['getAllProfiles'] = vi.fn().mockReturnValue(pending.then(() => []));
+    mockService['getGrowthDataForYear'] = vi.fn().mockReturnValue(pending.then(() => []));
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent?.toLowerCase()).toContain('loading');
-    resolveProfile(MOCK_PROFILE_COMPLETE);
+    resolveAll();
   });
 
   it('calls signOut and navigates to /login on sign out', async () => {

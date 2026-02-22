@@ -43,6 +43,7 @@ export function createMockSupabaseService(): Record<string, any> {
     isAdmin: vi.fn().mockResolvedValue(false),
     getOwnGrowthData: vi.fn().mockResolvedValue([]),
     getAllGrowthData: vi.fn().mockResolvedValue([]),
+    getGrowthDataForYear: vi.fn().mockResolvedValue([]),
     saveGrowthData: vi.fn().mockResolvedValue(undefined),
     getMarketIndexes: vi.fn().mockResolvedValue([]),
     saveMarketIndex: vi.fn().mockResolvedValue(undefined),

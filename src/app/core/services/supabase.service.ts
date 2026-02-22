@@ -129,6 +129,17 @@ export class SupabaseService {
     return (data ?? []) as GrowthData[];
   }
 
+  async getGrowthDataForYear(year: number): Promise<GrowthData[]> {
+    const { data, error } = await this.client
+      .from('growth_data')
+      .select('*')
+      .eq('year', year)
+      .order('month', { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []) as GrowthData[];
+  }
+
   async saveGrowthData(growthData: Partial<GrowthData>): Promise<void> {
     const { error } = await this.client.from('growth_data').upsert(growthData);
     if (error) throw error;

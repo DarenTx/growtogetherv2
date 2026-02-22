@@ -12,7 +12,7 @@ type RegistrationState = 'loading' | 'ready' | 'submitting' | 'error';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './registration.component.html',
-  styleUrl: './registration.component.scss',
+  styleUrl: './registration.component.css',
 })
 export class RegistrationComponent implements OnInit {
   readonly state = signal<RegistrationState>('loading');

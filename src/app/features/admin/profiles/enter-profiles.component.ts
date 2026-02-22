@@ -8,7 +8,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   templateUrl: './enter-profiles.component.html',
-  styleUrl: './enter-profiles.component.scss',
+  styleUrl: './enter-profiles.component.css',
 })
 export class EnterProfilesComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);

@@ -1,0 +1,4 @@
+/* Styles live in global styles.css (@layer components) */
+:host {
+  display: block;
+}

@@ -1,76 +1,115 @@
-<div class="registration-container">
-  <h1>Complete Your Profile</h1>
-  <p>Please fill in the details below to finish setting up your account.</p>
+<!-- ── Registration Page ──────────────────────────────────────────── -->
+<div class="gt-page">
+  <h1 class="gt-page-title">Complete Your Profile</h1>
+  <p class="gt-page-subtitle">Fill in the details below to finish setting up your account.</p>
 
   @if (state() === 'loading') {
-    <p>Loading your profile…</p>
+    <p class="gt-loading">Loading your profile…</p>
   } @else if (state() === 'error' && !form.dirty) {
-    <div role="alert" class="error-banner">{{ errorMessage() }}</div>
-    <button type="button" (click)="ngOnInit()">Try Again</button>
+    <div role="alert" class="gt-banner gt-banner-error">{{ errorMessage() }}</div>
+    <div class="gt-btn-row gt-mt-4">
+      <button type="button" class="gt-btn gt-btn-secondary" (click)="ngOnInit()">Try Again</button>
+    </div>
   } @else {
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <div class="field">
-        <label for="first_name">First Name <span aria-hidden="true">*</span></label>
-        <input id="first_name" type="text" formControlName="first_name" autocomplete="given-name" />
-        @if (firstNameControl.invalid && firstNameControl.touched) {
-          <span class="field-error">First name is required.</span>
-        }
-      </div>
-
-      <div class="field">
-        <label for="last_name">Last Name <span aria-hidden="true">*</span></label>
-        <input id="last_name" type="text" formControlName="last_name" autocomplete="family-name" />
-        @if (lastNameControl.invalid && lastNameControl.touched) {
-          <span class="field-error">Last name is required.</span>
-        }
-      </div>
-
-      <div class="field">
-        <label for="email">Email Address <span aria-hidden="true">*</span></label>
-        <input id="email" type="email" formControlName="email" autocomplete="email" />
-        @if (emailControl.invalid && emailControl.touched) {
-          <span class="field-error">A valid email address is required.</span>
-        }
-      </div>
-
-      <div class="field">
-        <label for="phone">Phone Number <span aria-hidden="true">*</span></label>
-        <input
-          id="phone"
-          type="tel"
-          formControlName="phone"
-          autocomplete="tel"
-          (blur)="onPhoneBlur()"
-        />
-        @if (phoneError()) {
-          <span class="field-error">{{ phoneError() }}</span>
-          <span class="field-hint"
-            >USA: (212) 555-1234 or 2125551234 | International: +44 20 7123 4567</span
+    <div class="gt-card">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="gt-form">
+        <div class="gt-field">
+          <label class="gt-label" for="first_name"
+            >First Name <span aria-hidden="true">*</span></label
           >
-        } @else if (phoneControl.invalid && phoneControl.touched) {
-          <span class="field-error">Phone number is required.</span>
-        }
-      </div>
+          <input
+            id="first_name"
+            type="text"
+            formControlName="first_name"
+            autocomplete="given-name"
+            class="gt-input"
+          />
+          @if (firstNameControl.invalid && firstNameControl.touched) {
+            <span class="gt-field-error field-error">First name is required.</span>
+          }
+        </div>
 
-      <div class="field">
-        <label for="invitation_code">Invitation Code <span aria-hidden="true">*</span></label>
-        <input id="invitation_code" type="text" formControlName="invitation_code" />
-        @if (invitationCodeControl.invalid && invitationCodeControl.touched) {
-          <span class="field-error">Invitation code is required.</span>
-        }
-      </div>
+        <div class="gt-field">
+          <label class="gt-label" for="last_name"
+            >Last Name <span aria-hidden="true">*</span></label
+          >
+          <input
+            id="last_name"
+            type="text"
+            formControlName="last_name"
+            autocomplete="family-name"
+            class="gt-input"
+          />
+          @if (lastNameControl.invalid && lastNameControl.touched) {
+            <span class="gt-field-error field-error">Last name is required.</span>
+          }
+        </div>
 
-      @if (state() === 'error') {
-        <div role="alert" class="error-banner">{{ errorMessage() }}</div>
-      }
+        <div class="gt-field">
+          <label class="gt-label" for="email"
+            >Email Address <span aria-hidden="true">*</span></label
+          >
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            class="gt-input"
+          />
+          @if (emailControl.invalid && emailControl.touched) {
+            <span class="gt-field-error field-error">A valid email address is required.</span>
+          }
+        </div>
 
-      <button type="submit" [disabled]="state() === 'submitting'">
-        @if (state() === 'submitting') {
-          Saving…
-        } @else {
-          Complete Registration
+        <div class="gt-field">
+          <label class="gt-label" for="phone">Phone Number <span aria-hidden="true">*</span></label>
+          <input
+            id="phone"
+            type="tel"
+            formControlName="phone"
+            autocomplete="tel"
+            (blur)="onPhoneBlur()"
+            class="gt-input"
+          />
+          @if (phoneError()) {
+            <span class="gt-field-error field-error">{{ phoneError() }}</span>
+            <span class="gt-field-hint"
+              >USA: (212) 555-1234 or 2125551234 | International: +44 20 7123 4567</span
+            >
+          } @else if (phoneControl.invalid && phoneControl.touched) {
+            <span class="gt-field-error field-error">Phone number is required.</span>
+          }
+        </div>
+
+        <div class="gt-field">
+          <label class="gt-label" for="invitation_code"
+            >Invitation Code <span aria-hidden="true">*</span></label
+          >
+          <input
+            id="invitation_code"
+            type="text"
+            formControlName="invitation_code"
+            class="gt-input"
+          />
+          @if (invitationCodeControl.invalid && invitationCodeControl.touched) {
+            <span class="gt-field-error field-error">Invitation code is required.</span>
+          }
+        </div>
+
+        @if (state() === 'error') {
+          <div role="alert" class="gt-banner gt-banner-error">{{ errorMessage() }}</div>
         }
-      </button>
-    </form>
+
+        <div class="gt-btn-row">
+          <button type="submit" class="gt-btn gt-btn-primary" [disabled]="state() === 'submitting'">
+            @if (state() === 'submitting') {
+              Saving…
+            } @else {
+              Complete Registration
+            }
+          </button>
+        </div>
+      </form>
+    </div>
   }
 </div>

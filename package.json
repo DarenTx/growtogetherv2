@@ -31,8 +31,11 @@
     "@angular/router": "^21.1.0",
     "@angular/service-worker": "^21.1.0",
     "@supabase/supabase-js": "^2.97.0",
+    "@tailwindcss/postcss": "^4.2.0",
     "libphonenumber-js": "^1.12.37",
+    "postcss": "^8.5.6",
     "rxjs": "~7.8.0",
+    "tailwindcss": "^4.2.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

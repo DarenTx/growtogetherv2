@@ -1,21 +1,13 @@
 :host {
   display: block;
-  padding: 1.5rem;
-  max-width: 640px;
-  margin: 0 auto;
-  font-family: inherit;
 }
 
-h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-}
+/* All visual styles use gt-* global classes from styles.css */
 
-h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
+/* Market index list column layout */
+.gt-list-header,
+.gt-list-row {
+  grid-template-columns: 2fr 1fr 1fr 1fr;
 }
 
 .field-row {
@@ -49,32 +41,6 @@ h2 {
   outline-offset: 1px;
 }
 
-/* checkbox row: left-column spacer + checkbox + label inline */
-.checkbox-row {
-  display: grid;
-  grid-template-columns: 9rem 1fr;
-  gap: 0.5rem 1rem;
-  align-items: center;
-  margin-bottom: 1rem;
-
-  .checkbox-field {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-
-    input[type='checkbox'] {
-      width: 1rem;
-      height: 1rem;
-      cursor: pointer;
-    }
-    label {
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
-  }
-}
-
 .field-error {
   grid-column: 2;
   font-size: 0.75rem;
@@ -88,18 +54,18 @@ h2 {
   border-radius: 4px;
   font-size: 0.875rem;
   margin-bottom: 1rem;
+}
 
-  &.success {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    color: #15803d;
-  }
+.banner.success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
 
-  &.error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #b91c1c;
-  }
+.banner.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
 }
 
 .actions {
@@ -116,14 +82,15 @@ button[type='submit'] {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.875rem;
+}
 
-  &:hover {
-    background: #1d4ed8;
-  }
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+button[type='submit']:hover {
+  background: #1d4ed8;
+}
+
+button[type='submit']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 button[type='button'] {
@@ -134,10 +101,10 @@ button[type='button'] {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.875rem;
+}
 
-  &:hover {
-    background: #d1d5db;
-  }
+button[type='button']:hover {
+  background: #d1d5db;
 }
 
 hr {
@@ -146,18 +113,11 @@ hr {
   margin: 2rem 0;
 }
 
-/* ── Loading / error states ── */
-.loading {
-  color: #6b7280;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-
-/* ── Growth data list: Year-Mo | Bank | Managed | Growth % ── */
+/* ── Market indexes list: Index | Year | Month | Growth % ── */
 .list-header,
 .list-row {
   display: grid;
-  grid-template-columns: 5rem 11rem 6rem 6rem;
+  grid-template-columns: 8rem 4rem 4rem 6rem;
   gap: 1rem;
   padding: 0.5rem 0.875rem;
   font-size: 0.875rem;
@@ -175,17 +135,18 @@ hr {
   border: 1px solid #e5e7eb;
   border-radius: 4px;
   overflow: hidden;
+}
 
-  .list-row {
-    border-bottom: 1px solid #e5e7eb;
+.data-list .list-row {
+  border-bottom: 1px solid #e5e7eb;
+}
 
-    &:last-child {
-      border-bottom: none;
-    }
-    &:nth-child(even) {
-      background: #f9fafb;
-    }
-  }
+.data-list .list-row:last-child {
+  border-bottom: none;
+}
+
+.data-list .list-row:nth-child(even) {
+  background: #f9fafb;
 }
 
 .empty {

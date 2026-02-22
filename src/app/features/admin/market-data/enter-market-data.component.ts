@@ -11,7 +11,7 @@ const CURRENT_MONTH = new Date().getMonth() + 1;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule],
   templateUrl: './enter-market-data.component.html',
-  styleUrl: './enter-market-data.component.scss',
+  styleUrl: './enter-market-data.component.css',
 })
 export class EnterMarketDataComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);
