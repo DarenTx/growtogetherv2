@@ -1,0 +1,60 @@
+<div class="login-container">
+  @if (state() === 'sent') {
+    <div class="sent-message">
+      <h1>Check your messages</h1>
+      <p>
+        We sent a magic link to <strong>{{ sentTo() }}</strong
+        >.
+      </p>
+      <p>Click the link in the message to sign in. The link expires in 1 hour.</p>
+      <button type="button" (click)="tryAgain()">Use a different address</button>
+    </div>
+  } @else {
+    <h1>Sign in to Grow Together</h1>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="field">
+        <label for="identifier">Email or Phone Number</label>
+        <input
+          id="identifier"
+          type="text"
+          formControlName="identifier"
+          placeholder="Enter your email or phone number"
+          autocomplete="email"
+          (blur)="onIdentifierBlur()"
+          [attr.aria-invalid]="
+            (identifierControl.invalid && identifierControl.touched) || phoneError() ? 'true' : null
+          "
+        />
+
+        @if (identifierControl.invalid && identifierControl.touched) {
+          <span class="field-error">This field is required.</span>
+        }
+
+        @if (phoneError()) {
+          <span class="field-error">{{ phoneError() }}</span>
+          <span class="field-hint">Examples: (212) 555-1234 or +44 20 7123 4567</span>
+        }
+
+        <p class="help-text">
+          <strong>Examples:</strong><br />
+          • Email: user&#64;example.com<br />
+          • USA Phone: (212) 555-1234 or 2125551234<br />
+          • International: +44 20 7123 4567
+        </p>
+      </div>
+
+      @if (state() === 'error') {
+        <div class="error-banner" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <button type="submit" [disabled]="state() === 'loading'">
+        @if (state() === 'loading') {
+          Sending…
+        } @else {
+          Send Magic Link
+        }
+      </button>
+    </form>
+  }
+</div>

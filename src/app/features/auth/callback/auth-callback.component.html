@@ -1,0 +1,11 @@
+<div class="callback-container">
+  @if (status() === 'loading') {
+    <p>Signing you in…</p>
+  } @else {
+    <div role="alert">
+      <h1>Something went wrong</h1>
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="goToLogin()">Back to Sign In</button>
+    </div>
+  }
+</div>

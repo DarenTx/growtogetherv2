@@ -1,0 +1,76 @@
+<div class="registration-container">
+  <h1>Complete Your Profile</h1>
+  <p>Please fill in the details below to finish setting up your account.</p>
+
+  @if (state() === 'loading') {
+    <p>Loading your profile…</p>
+  } @else if (state() === 'error' && !form.dirty) {
+    <div role="alert" class="error-banner">{{ errorMessage() }}</div>
+    <button type="button" (click)="ngOnInit()">Try Again</button>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="field">
+        <label for="first_name">First Name <span aria-hidden="true">*</span></label>
+        <input id="first_name" type="text" formControlName="first_name" autocomplete="given-name" />
+        @if (firstNameControl.invalid && firstNameControl.touched) {
+          <span class="field-error">First name is required.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="last_name">Last Name <span aria-hidden="true">*</span></label>
+        <input id="last_name" type="text" formControlName="last_name" autocomplete="family-name" />
+        @if (lastNameControl.invalid && lastNameControl.touched) {
+          <span class="field-error">Last name is required.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="email">Email Address <span aria-hidden="true">*</span></label>
+        <input id="email" type="email" formControlName="email" autocomplete="email" />
+        @if (emailControl.invalid && emailControl.touched) {
+          <span class="field-error">A valid email address is required.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="phone">Phone Number <span aria-hidden="true">*</span></label>
+        <input
+          id="phone"
+          type="tel"
+          formControlName="phone"
+          autocomplete="tel"
+          (blur)="onPhoneBlur()"
+        />
+        @if (phoneError()) {
+          <span class="field-error">{{ phoneError() }}</span>
+          <span class="field-hint"
+            >USA: (212) 555-1234 or 2125551234 | International: +44 20 7123 4567</span
+          >
+        } @else if (phoneControl.invalid && phoneControl.touched) {
+          <span class="field-error">Phone number is required.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="invitation_code">Invitation Code <span aria-hidden="true">*</span></label>
+        <input id="invitation_code" type="text" formControlName="invitation_code" />
+        @if (invitationCodeControl.invalid && invitationCodeControl.touched) {
+          <span class="field-error">Invitation code is required.</span>
+        }
+      </div>
+
+      @if (state() === 'error') {
+        <div role="alert" class="error-banner">{{ errorMessage() }}</div>
+      }
+
+      <button type="submit" [disabled]="state() === 'submitting'">
+        @if (state() === 'submitting') {
+          Saving…
+        } @else {
+          Complete Registration
+        }
+      </button>
+    </form>
+  }
+</div>

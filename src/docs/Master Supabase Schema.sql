@@ -74,69 +74,70 @@ ALTER TABLE public.growth_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.market_indexes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Registered users can view all profiles" 
-ON public.profiles FOR SELECT 
-TO authenticated
-USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND registration_complete = true)
-);
+-- Helper functions (SECURITY DEFINER bypasses RLS, breaking recursive policy loops)
+CREATE OR REPLACE FUNCTION public.is_registered()
+RETURNS BOOLEAN LANGUAGE SQL SECURITY DEFINER STABLE AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND registration_complete = true
+  );
+$$;
 
-CREATE POLICY "Users can update own profile" 
-ON public.profiles FOR UPDATE 
+CREATE OR REPLACE FUNCTION public.is_admin_user()
+RETURNS BOOLEAN LANGUAGE SQL SECURITY DEFINER STABLE AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND is_admin = true
+  );
+$$;
+
+CREATE POLICY "Registered users can view all profiles"
+ON public.profiles FOR SELECT
+TO authenticated
+USING (public.is_registered());
+
+CREATE POLICY "Users can update own profile"
+ON public.profiles FOR UPDATE
 TO authenticated
 USING (auth.uid() = id);
 
-CREATE POLICY "Admin can update any profile" 
-ON public.profiles FOR UPDATE 
+CREATE POLICY "Admin can update any profile"
+ON public.profiles FOR UPDATE
 TO authenticated
-USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
-);
+USING (public.is_admin_user());
 
-CREATE POLICY "Users can insert own profile during auth" 
-ON public.profiles FOR INSERT 
+CREATE POLICY "Users can insert own profile during auth"
+ON public.profiles FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "Registered users can view all growth data" 
-ON public.growth_data FOR SELECT 
+CREATE POLICY "Registered users can view all growth data"
+ON public.growth_data FOR SELECT
 TO authenticated
-USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND registration_complete = true)
-);
+USING (public.is_registered());
 
-CREATE POLICY "Users can manage own growth data" 
-ON public.growth_data FOR ALL 
+CREATE POLICY "Users can manage own growth data"
+ON public.growth_data FOR ALL
 TO authenticated
 USING (user_id = auth.uid())
 WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "Admin can manage growth data" 
-ON public.growth_data FOR ALL 
+CREATE POLICY "Admin can manage growth data"
+ON public.growth_data FOR ALL
 TO authenticated
-USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
-)
-WITH CHECK (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
-);
+USING (public.is_admin_user())
+WITH CHECK (public.is_admin_user());
 
 CREATE POLICY "Registered users can view market indexes"
 ON public.market_indexes FOR SELECT
 TO authenticated
-USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND registration_complete = true)
-);
+USING (public.is_registered());
 
-CREATE POLICY "Admin can manage market indexes" 
-ON public.market_indexes FOR ALL 
+CREATE POLICY "Admin can manage market indexes"
+ON public.market_indexes FOR ALL
 TO authenticated
-USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
-)
-WITH CHECK (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
-);
+USING (public.is_admin_user())
+WITH CHECK (public.is_admin_user());
 
 -- Requirement: Audit logs visible to any authenticated user
 CREATE POLICY "Authenticated users can view audit logs"

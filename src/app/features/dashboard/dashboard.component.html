@@ -1,0 +1,9 @@
+<div class="dashboard-container">
+  @if (profile()) {
+    <h1>Welcome, {{ profile()!.first_name }}</h1>
+    <p>Dashboard content coming soon.</p>
+    <button type="button" (click)="signOut()">Sign Out</button>
+  } @else {
+    <p>Loading…</p>
+  }
+</div>
