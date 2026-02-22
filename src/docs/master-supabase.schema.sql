@@ -1,8 +1,12 @@
 -- ==========================================
 -- 1. PROFILES TABLE
 -- ==========================================
+-- NOTE: profiles.id is a standalone UUID with no FK to auth.users.
+-- Profiles can be created as placeholders before a Supabase Auth user exists.
+-- When a user is onboarded (future phase), profiles.id is updated to match the
+-- auth.users UUID returned by supabase.auth.admin.inviteUserByEmail() via an Edge Function.
 CREATE TABLE public.profiles (
-    id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     first_name TEXT,
     last_name TEXT,
     email TEXT UNIQUE CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'), 
@@ -34,6 +38,7 @@ CREATE TABLE public.growth_data (
 CREATE INDEX idx_growth_email_key ON public.growth_data(email_key);
 CREATE INDEX idx_growth_user_id ON public.growth_data(user_id);
 CREATE INDEX idx_growth_date ON public.growth_data(year, month);
+ALTER TABLE public.growth_data ADD CONSTRAINT uq_growth_data_natural_key UNIQUE (email_key, bank_name, year, month);
 
 -- ==========================================
 -- 3. MARKET INDEXES TABLE
@@ -49,6 +54,7 @@ CREATE TABLE public.market_indexes (
 );
 
 CREATE INDEX idx_market_date ON public.market_indexes(year, month);
+ALTER TABLE public.market_indexes ADD CONSTRAINT uq_market_indexes_natural_key UNIQUE (index_name, year, month);
 
 -- ==========================================
 -- 4. AUDIT LOGS TABLE
@@ -106,10 +112,13 @@ ON public.profiles FOR UPDATE
 TO authenticated
 USING (public.is_admin_user());
 
-CREATE POLICY "Users can insert own profile during auth"
+-- Admins can insert placeholder profiles directly (no backing auth user required).
+-- The handle_new_auth_user trigger (SECURITY DEFINER) handles profile creation for
+-- real auth users and bypasses RLS, so no separate user INSERT policy is needed.
+CREATE POLICY "Admin can insert profiles"
 ON public.profiles FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = id);
+WITH CHECK (public.is_admin_user());
 
 CREATE POLICY "Registered users can view all growth data"
 ON public.growth_data FOR SELECT
@@ -179,6 +188,11 @@ CREATE TRIGGER audit_growth_data_trigger AFTER INSERT OR UPDATE OR DELETE ON pub
 CREATE TRIGGER audit_market_indexes_trigger AFTER INSERT OR UPDATE OR DELETE ON public.market_indexes FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
 
 -- Standard Utility Functions
+-- Fires when a real auth user is created (e.g. magic link signup or future onboarding).
+-- Inserts a new profile row keyed to the auth user's UUID.
+-- Runs as SECURITY DEFINER (bypasses RLS).
+-- NOTE: Does not check for an existing placeholder profile with the same email.
+-- Linking a placeholder to a real auth user is handled by the future onboarding Edge Function.
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
