@@ -25,7 +25,7 @@ jobs:
         run: npm run build -- --configuration production --base-href /
 
       - name: Copy index.html to 404.html (for Angular routing)
-        run: cp dist/grow-together2/browser/index.html dist/grow-together2/browser/404.html
+        run: cp dist/grow-together/browser/index.html dist/grow-together/browser/404.html
 
       - name: List dist folder contents
         run: ls -R dist
@@ -34,5 +34,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist/grow-together2/browser
+          publish_dir: ./dist/grow-together/browser
           cname: growtogether2.cadiumdev.com
