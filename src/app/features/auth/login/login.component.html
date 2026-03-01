@@ -7,28 +7,26 @@
         <div class="gt-sent-icon" aria-hidden="true">✉️</div>
         <h1 class="gt-page-title gt-text-center">Check your messages</h1>
         <p class="gt-page-subtitle gt-text-center">
-          We sent a magic link to <strong>{{ sentTo() }}</strong
+          We sent a login link to <strong>{{ sentTo() }}</strong
           >. Click it to sign in — it expires in 1 hour.
         </p>
         <div class="gt-btn-row">
-          <button type="button" class="gt-btn gt-btn-secondary" (click)="tryAgain()">
-            Use a different address
-          </button>
+          <a role="button" class="gt-link" (click)="tryAgain()">Use a different address</a>
         </div>
       </div>
     } @else {
       <!-- ── Sign-in form ── -->
       <h1 class="gt-page-title">Sign in</h1>
-      <p class="gt-page-subtitle">Enter your email or phone to receive a magic link.</p>
+      <p class="gt-page-subtitle">Enter your email to receive a login link.</p>
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="gt-form">
         <div class="gt-field">
-          <label class="gt-label" for="identifier">Email or Phone Number</label>
+          <label class="gt-label" for="identifier">Email</label>
           <input
             id="identifier"
             type="text"
             formControlName="identifier"
-            placeholder="e.g. user@example.com or (212) 555-1234"
+            placeholder="e.g. user@example.com"
             autocomplete="email"
             (blur)="onIdentifierBlur()"
             class="gt-input"
@@ -49,8 +47,8 @@
 
           <p class="gt-help-text">
             • Email: user&#64;example.com<br />
-            • USA Phone: (212) 555-1234<br />
-            • International: +44 20 7123 4567
+            <!--• USA Phone: (212) 555-1234<br />
+            • International: +44 20 7123 4567-->
           </p>
         </div>
 
