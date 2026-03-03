@@ -1,1 +1,9 @@
 /* Component-scoped overrides — reserved for future use */
+
+.gt-section-subtitle {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--color-text-muted, #6b7280);
+  margin-top: -0.25rem;
+  margin-bottom: 1rem;
+}

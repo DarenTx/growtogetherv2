@@ -1,7 +1,7 @@
 <!-- ── Monthly Growth Entry ───────────────────────────────────── -->
 <div class="gt-page">
-  <h1 class="gt-page-title">Enter Monthly Growth</h1>
-  <p class="gt-page-subtitle">{{ displayLabel }}</p>
+  <h1 class="gt-page-title">{{ displayLabel }}</h1>
+  <p class="gt-section-subtitle">Enter Monthly Growth</p>
 
   <div class="gt-card">
     <form class="gt-form" novalidate aria-label="Monthly growth entry form" (ngSubmit)="onSave()">
@@ -13,6 +13,12 @@
             <option [value]="opt">{{ opt }}</option>
           }
         </select>
+      </div>
+
+      <!-- ── Is Managed ────────────────────────────────────────── -->
+      <div class="gt-checkbox-row">
+        <input id="is_managed" type="checkbox" [formControl]="isManagedControl" />
+        <label for="is_managed">Is Managed?</label>
       </div>
 
       <!-- ── Loading / load-failed feedback ───────────────────── -->
@@ -40,12 +46,6 @@
         <p class="gt-field-hint">
           Enter a positive or negative decimal. Leave blank and save to clear.
         </p>
-      </div>
-
-      <!-- ── Is Managed ────────────────────────────────────────── -->
-      <div class="gt-checkbox-row">
-        <input id="is_managed" type="checkbox" [formControl]="isManagedControl" />
-        <label for="is_managed">Is Managed?</label>
       </div>
 
       <!-- ── Banners ───────────────────────────────────────────── -->
