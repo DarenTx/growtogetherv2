@@ -1,4 +1,4 @@
-# Audit Log — Product Specification
+# Activity Log — Product Specification
 
 ## 1. Objective
 
@@ -39,18 +39,18 @@ The component is a lazy-loaded standalone component.
 
 **Location**: `DashboardComponent` template, inside the existing `<nav class="gt-dash-nav">` element.
 
-**Visibility**: The **Audit Log** link is visible to **all** authenticated users—it is **not** gated behind `@if (isAdmin())`.
+**Visibility**: The **Activity Log** link is visible to **all** authenticated users—it is **not** gated behind `@if (isAdmin())`.
 
 **Implementation notes**:
 
-- Add `<a routerLink="/audit-log" class="gt-nav-link">Audit Log</a>` to the navigation block, positioned after any admin-only links and before the Sign Out button.
+- Add `<a routerLink="/audit-log" class="gt-nav-link">Activity Log</a>` to the navigation block, positioned after any admin-only links and before the Sign Out button.
 - No changes to guards or component signals are required in `DashboardComponent`.
 
 ---
 
 ## 5. Supported Functionality
 
-### 5.1 Audit Log Table
+### 5.1 Activity Log Table
 
 Displays one row per `audit_logs` record with the following columns:
 
@@ -81,7 +81,7 @@ Displays one row per `audit_logs` record with the following columns:
 
 ### 5.4 Empty State
 
-If the `audit_logs` table contains no records, display a centered message: **"No audit log entries found."**
+If the `audit_logs` table contains no records, display a centered message: **"No activity log entries found."**
 
 ---
 
@@ -301,8 +301,8 @@ export class AuditLogComponent implements OnInit {
 <div class="gt-dash-container">
   <!-- Header row with page title and Back button -->
   <div class="gt-dash-header">
-    <h1 class="gt-page-title">Audit Log</h1>
-    <nav aria-label="Audit log navigation">
+    <h1 class="gt-page-title">Activity Log</h1>
+    <nav aria-label="Activity log navigation">
       <button type="button" class="gt-nav-link" (click)="goBack()">&#8592; Back</button>
     </nav>
   </div>
@@ -319,7 +319,7 @@ export class AuditLogComponent implements OnInit {
   <!-- Table -->
   @else {
     <div class="gt-table-wrap">
-      <table class="gt-table" aria-label="Audit log">
+      <table class="gt-table" aria-label="Activity log">
         <thead>
           <tr>
             <th scope="col">Date / Time</th>
@@ -359,7 +359,7 @@ export class AuditLogComponent implements OnInit {
 
 ### 10.1 Page Title
 
-The visible page heading is `<h1 class="gt-page-title">Audit Log</h1>`, consistent with how other pages in the application title themselves (e.g. "Enter Profiles", "Growth Dashboard 2026"). No component in this application sets the browser `<title>` tag — the tab always reads "GrowTogether" from `index.html`, which is the established convention.
+The visible page heading is `<h1 class="gt-page-title">Activity Log</h1>`, consistent with how other pages in the application title themselves (e.g. "Enter Profiles", "Growth Dashboard 2026"). No component in this application sets the browser `<title>` tag — the tab always reads "GrowTogether" from `index.html`, which is the established convention.
 
 ### 10.2 Existing Global Classes (no action needed)
 

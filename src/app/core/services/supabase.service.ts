@@ -7,6 +7,7 @@ import {
   SupabaseClient,
 } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
+import { AuditLog } from '../models/audit-log.interface';
 import { GrowthData } from '../models/growth-data.interface';
 import { MarketIndex } from '../models/market-index.interface';
 import { Profile, RegistrationData } from '../models/profile.interface';
@@ -294,5 +295,26 @@ export class SupabaseService {
     }
     this.logger.debug(`Fetched ${(data ?? []).length} growth records for email key`);
     return (data ?? []) as GrowthData[];
+  }
+
+  // ─── Audit Log ────────────────────────────────────────────────────────────
+
+  async getAuditLogPage(
+    page: number,
+    pageSize: number,
+  ): Promise<{ rows: AuditLog[]; total: number }> {
+    this.logger.debug('Fetching audit log page', page);
+    const from = page * pageSize;
+    const { data, error } = await this.client.rpc('get_audit_log_page', {
+      p_offset: from,
+      p_limit: pageSize,
+    });
+
+    if (error) {
+      this.logger.error('getAuditLogPage failed', error);
+      throw error;
+    }
+    const result = data as { rows: AuditLog[]; total: number };
+    return { rows: result.rows ?? [], total: result.total ?? 0 };
   }
 }

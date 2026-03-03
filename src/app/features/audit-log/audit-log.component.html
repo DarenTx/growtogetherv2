@@ -1,0 +1,68 @@
+<!-- ── Audit Log ──────────────────────────────────────────────── -->
+<div class="gt-dash-container">
+  <!-- Header row with page title and Back button -->
+  <div class="gt-dash-header">
+    <h1 class="gt-page-title">Activity Log</h1>
+    <nav aria-label="Activity log navigation">
+      <button type="button" class="gt-nav-link" (click)="goBack()">&#8592; Back</button>
+    </nav>
+  </div>
+
+  <!-- Loading state -->
+  @if (loading()) {
+    <p class="gt-loading">Loading…</p>
+  }
+
+  <!-- Error state -->
+  @else if (errorMessage()) {
+    <p class="gt-error-page">{{ errorMessage() }}</p>
+  }
+
+  <!-- Empty state -->
+  @else if (rows().length === 0) {
+    <p class="gt-empty">No activity log entries found.</p>
+  }
+
+  <!-- Table -->
+  @else {
+    <div class="gt-table-wrap">
+      <table class="gt-table" aria-label="Activity log">
+        <thead>
+          <tr>
+            <th scope="col">Date / Time</th>
+            <th scope="col">Performed By</th>
+            <th scope="col">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (log of rows(); track log.id) {
+            <tr>
+              <td class="col-datetime">{{ formatDateTime(log.created_at) }}</td>
+              <td class="col-performer">{{ resolvePerformerName(log) }}</td>
+              <td class="col-description">{{ buildDescription(log) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination controls -->
+    <div class="gt-pagination" role="navigation" aria-label="Pagination">
+      <button
+        class="gt-btn-secondary"
+        [disabled]="isFirstPage()"
+        (click)="goToPage(currentPage() - 1)"
+      >
+        ← Previous
+      </button>
+      <span class="gt-page-indicator">Page {{ currentPage() + 1 }} of {{ totalPages() }}</span>
+      <button
+        class="gt-btn-secondary"
+        [disabled]="isLastPage()"
+        (click)="goToPage(currentPage() + 1)"
+      >
+        Next →
+      </button>
+    </div>
+  }
+</div>

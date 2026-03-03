@@ -564,6 +564,20 @@
     color: unset;
   }
 
+  /* ── Pagination ─────────────────────────────────────────────── */
+  .gt-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .gt-page-indicator {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+  }
+
   /* ── Utility helpers ────────────────────────────────────────── */
   .gt-text-center {
     text-align: center;

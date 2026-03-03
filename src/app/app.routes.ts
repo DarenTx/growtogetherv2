@@ -39,6 +39,12 @@ export const routes: Routes = [
     canActivate: [registrationGuard],
   },
   {
+    path: 'audit-log',
+    loadComponent: () =>
+      import('./features/audit-log/audit-log.component').then((m) => m.AuditLogComponent),
+    canActivate: [registrationGuard],
+  },
+  {
     path: 'admin',
     canActivate: [adminGuard],
     children: [

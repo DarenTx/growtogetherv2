@@ -50,6 +50,7 @@ export function createMockSupabaseService(): Record<string, any> {
     getAllProfiles: vi.fn().mockResolvedValue([]),
     adminCreateProfile: vi.fn().mockResolvedValue(undefined),
     getGrowthDataByEmailKey: vi.fn().mockResolvedValue([]),
+    getAuditLogPage: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
     authCallbackUrl: 'http://localhost/auth/callback',
   };
 }
