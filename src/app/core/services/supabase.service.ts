@@ -271,7 +271,9 @@ export class SupabaseService {
 
   async saveGrowthData(growthData: Partial<GrowthData>): Promise<void> {
     this.logger.debug('Saving growth data', growthData);
-    const { error } = await this.client.from('growth_data').upsert(growthData);
+    const { error } = await this.client
+      .from('growth_data')
+      .upsert(growthData, { onConflict: 'email_key,bank_name,year,month' });
     if (error) {
       this.logger.error('saveGrowthData failed', error);
       throw error;

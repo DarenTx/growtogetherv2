@@ -93,8 +93,10 @@ export class MonthlyGrowthEntryComponent implements OnInit {
       );
       if (record) {
         this.growthPctControl.setValue(record.growth_pct.toFixed(2));
+        this.isManagedControl.setValue(record.is_managed);
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error('[MonthlyGrowthEntry] loadExistingRecord failed', err);
       this.loadFailed.set(true);
     } finally {
       this.isLoading.set(false);
@@ -136,7 +138,14 @@ export class MonthlyGrowthEntryComponent implements OnInit {
         this.successMessage.set('Growth saved.');
       }
     } catch (err: unknown) {
-      this.errorMessage.set(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      console.error('[MonthlyGrowthEntry] onSave failed', err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'object' && err !== null && 'message' in err
+            ? String((err as { message: unknown }).message)
+            : 'An unexpected error occurred.';
+      this.errorMessage.set(message);
     } finally {
       this.isSaving.set(false);
     }
