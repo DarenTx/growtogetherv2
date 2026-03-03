@@ -1,0 +1,65 @@
+<!-- ── Monthly Growth Entry ───────────────────────────────────── -->
+<div class="gt-page">
+  <h1 class="gt-page-title">{{ displayLabel }}</h1>
+  <p class="gt-section-subtitle">Enter Monthly Growth</p>
+
+  <div class="gt-card">
+    <form class="gt-form" novalidate aria-label="Monthly growth entry form" (ngSubmit)="onSave()">
+      <!-- ── Bank Name ─────────────────────────────────────────── -->
+      <div class="gt-field">
+        <label class="gt-label" for="bank_name">Bank Name</label>
+        <select id="bank_name" class="gt-select" [formControl]="bankControl">
+          @for (opt of bankOptions; track opt) {
+            <option [value]="opt">{{ opt }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- ── Is Managed ────────────────────────────────────────── -->
+      <div class="gt-checkbox-row">
+        <input id="is_managed" type="checkbox" [formControl]="isManagedControl" />
+        <label for="is_managed">Is Managed?</label>
+      </div>
+
+      <!-- ── Loading / load-failed feedback ───────────────────── -->
+      @if (isLoading()) {
+        <p class="text-center text-[var(--color-text-muted)]">Loading…</p>
+      }
+      @if (loadFailed()) {
+        <div class="gt-banner gt-banner-error" role="alert">
+          Could not load existing data for this month. You may still enter and save a value.
+        </div>
+      }
+
+      <!-- ── Growth % ──────────────────────────────────────────── -->
+      <div class="gt-field">
+        <label class="gt-label" for="growth_pct">Growth %</label>
+        <input
+          id="growth_pct"
+          class="gt-input"
+          type="text"
+          inputmode="decimal"
+          placeholder="e.g. 3.75 or -1.50"
+          [formControl]="growthPctControl"
+          [attr.aria-invalid]="errorMessage() !== ''"
+        />
+        <p class="gt-field-hint">
+          Enter a positive or negative decimal. Leave blank and save to clear.
+        </p>
+      </div>
+
+      <!-- ── Banners ───────────────────────────────────────────── -->
+      @if (successMessage()) {
+        <div class="gt-banner gt-banner-success" role="status">{{ successMessage() }}</div>
+      }
+      @if (errorMessage()) {
+        <div class="gt-banner gt-banner-error" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <!-- ── Actions ───────────────────────────────────────────── -->
+      <div class="gt-btn-row">
+        <button class="gt-btn gt-btn-primary" type="submit" [disabled]="isSaving()">Save</button>
+      </div>
+    </form>
+  </div>
+</div>

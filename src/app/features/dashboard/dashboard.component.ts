@@ -10,6 +10,7 @@ import { Router, RouterLink } from '@angular/router';
 import { GrowthData } from '../../core/models/growth-data.interface';
 import { Profile } from '../../core/models/profile.interface';
 import { SupabaseService } from '../../core/services/supabase.service';
+import { MonthlyGrowthEntryComponent } from './monthly-growth-entry/monthly-growth-entry.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -42,7 +43,7 @@ export interface DashboardRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, MonthlyGrowthEntryComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })

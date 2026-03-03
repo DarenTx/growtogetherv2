@@ -266,3 +266,40 @@ RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE
 CREATE TRIGGER on_profile_update BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
 CREATE TRIGGER on_growth_data_trigger_update BEFORE UPDATE ON public.growth_data FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
 CREATE TRIGGER on_market_index_update BEFORE UPDATE ON public.market_indexes FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
+-- --- Audit Log RPC -----------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.get_audit_log_page(
+  p_offset INT,
+  p_limit  INT
+)
+RETURNS JSON
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+AS $$
+  SELECT json_build_object(
+    'total', (SELECT COUNT(*) FROM public.audit_logs),
+    'rows', (
+      SELECT json_agg(r)
+      FROM (
+        SELECT
+          al.id,
+          al.table_name,
+          al.record_id,
+          al.action,
+          al.performed_by,
+          p.first_name  AS performer_first_name,
+          p.last_name   AS performer_last_name,
+          al.old_data,
+          al.new_data,
+          al.created_at
+        FROM public.audit_logs al
+        LEFT JOIN public.profiles p ON p.id = al.performed_by
+        ORDER BY al.created_at DESC
+        LIMIT p_limit OFFSET p_offset
+      ) r
+    )
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_audit_log_page(INT, INT) TO authenticated;
