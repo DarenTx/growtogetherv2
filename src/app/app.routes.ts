@@ -45,6 +45,14 @@ export const routes: Routes = [
     canActivate: [registrationGuard],
   },
   {
+    path: 'dashboard/enter-growth',
+    loadComponent: () =>
+      import('./features/dashboard/monthly-growth-entry/monthly-growth-entry.component').then(
+        (m) => m.MonthlyGrowthEntryComponent,
+      ),
+    canActivate: [registrationGuard],
+  },
+  {
     path: 'admin',
     canActivate: [adminGuard],
     children: [

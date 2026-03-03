@@ -179,6 +179,64 @@ export class SupabaseService {
     return (data ?? []) as GrowthData[];
   }
 
+  async getOwnGrowthDataForMonth(
+    year: number,
+    month: number,
+    bankName: string,
+  ): Promise<GrowthData | null> {
+    this.logger.debug('Fetching own growth data for month', year, month, bankName);
+    const session = await this.getSession();
+    if (!session) {
+      this.logger.warn('getOwnGrowthDataForMonth called without active session');
+      return null;
+    }
+
+    const emailKey = session.user.email!.toLowerCase();
+    const { data, error } = await this.client
+      .from('growth_data')
+      .select('*')
+      .eq('email_key', emailKey)
+      .eq('year', year)
+      .eq('month', month)
+      .eq('bank_name', bankName)
+      .limit(1);
+
+    if (error) {
+      this.logger.error('getOwnGrowthDataForMonth failed', error);
+      throw error;
+    }
+
+    if (data && data.length > 1) {
+      this.logger.warn('getOwnGrowthDataForMonth returned multiple rows; using first');
+    }
+
+    return data && data.length > 0 ? (data[0] as GrowthData) : null;
+  }
+
+  async deleteOwnGrowthDataForMonth(year: number, month: number, bankName: string): Promise<void> {
+    this.logger.debug('Deleting own growth data for month', year, month, bankName);
+    const session = await this.getSession();
+    if (!session) {
+      this.logger.error('deleteOwnGrowthDataForMonth called without active session');
+      throw new Error('Not authenticated');
+    }
+
+    const emailKey = session.user.email!.toLowerCase();
+    const { error } = await this.client
+      .from('growth_data')
+      .delete()
+      .eq('email_key', emailKey)
+      .eq('year', year)
+      .eq('month', month)
+      .eq('bank_name', bankName);
+
+    if (error) {
+      this.logger.error('deleteOwnGrowthDataForMonth failed', error);
+      throw error;
+    }
+    this.logger.debug('Own growth data deleted for month successfully');
+  }
+
   async getAllGrowthData(): Promise<GrowthData[]> {
     this.logger.debug('Fetching all growth data');
     const { data, error } = await this.client
