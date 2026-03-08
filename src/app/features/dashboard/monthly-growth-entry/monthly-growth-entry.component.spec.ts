@@ -1,6 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SupabaseService } from '../../../core/services/supabase.service';
-import { createMockSupabaseService } from '../../../core/testing/mock-supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { GrowthDataService } from '../../../core/services/growth-data.service';
+import {
+  createMockAuthService,
+  createMockGrowthDataService,
+} from '../../../core/testing/mock-supabase.service';
 import { MonthlyGrowthEntryComponent } from './monthly-growth-entry.component';
 
 const MOCK_SESSION = {
@@ -17,7 +21,7 @@ describe('MonthlyGrowthEntryComponent', () => {
   let mockService: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    mockService = { ...createMockAuthService(), ...createMockGrowthDataService() };
     mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
     mockService['getOwnGrowthDataForMonth'] = vi.fn().mockResolvedValue(null);
     mockService['saveGrowthData'] = vi.fn().mockResolvedValue(undefined);
@@ -25,7 +29,10 @@ describe('MonthlyGrowthEntryComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [MonthlyGrowthEntryComponent],
-      providers: [{ provide: SupabaseService, useValue: mockService }],
+      providers: [
+        { provide: AuthService, useValue: mockService },
+        { provide: GrowthDataService, useValue: mockService },
+      ],
     }).compileComponents();
   });
 
@@ -78,9 +85,7 @@ describe('MonthlyGrowthEntryComponent', () => {
   // ─── 5. Existing record pre-fills growthPctControl ───────────────────────
 
   it('pre-fills growthPctControl with toFixed(2) when record exists', async () => {
-    mockService['getOwnGrowthDataForMonth'] = vi
-      .fn()
-      .mockResolvedValue({ growth_pct: 3.75, is_managed: false });
+    mockService['getOwnGrowthDataForMonth'] = vi.fn().mockResolvedValue({ growth_pct: 3.75 });
     await createComponent();
     expect(component.growthPctControl.value).toBe('3.75');
   });
@@ -108,7 +113,7 @@ describe('MonthlyGrowthEntryComponent', () => {
     // First call (Fidelity) returns a record
     mockService['getOwnGrowthDataForMonth'] = vi
       .fn()
-      .mockResolvedValueOnce({ growth_pct: 3.75, is_managed: false })
+      .mockResolvedValueOnce({ growth_pct: 3.75 })
       .mockResolvedValueOnce(null);
 
     await createComponent();
@@ -138,7 +143,6 @@ describe('MonthlyGrowthEntryComponent', () => {
       year: component.prevYear,
       month: component.prevMonth,
       bank_name: 'Fidelity Investments',
-      is_managed: false,
       growth_pct: 5.25,
     });
   });

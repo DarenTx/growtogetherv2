@@ -9,7 +9,10 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { GrowthData } from '../../core/models/growth-data.interface';
 import { Profile } from '../../core/models/profile.interface';
-import { SupabaseService } from '../../core/services/supabase.service';
+import { AdminService } from '../../core/services/admin.service';
+import { AuthService } from '../../core/services/auth.service';
+import { GrowthDataService } from '../../core/services/growth-data.service';
+import { ProfileService } from '../../core/services/profile.service';
 import { MonthlyGrowthEntryComponent } from './monthly-growth-entry/monthly-growth-entry.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -48,7 +51,10 @@ export interface DashboardRow {
   styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
+  private readonly adminService = inject(AdminService);
+  private readonly growthDataService = inject(GrowthDataService);
   private readonly router = inject(Router);
 
   readonly currentYear = CURRENT_YEAR;
@@ -124,9 +130,9 @@ export class DashboardComponent implements OnInit {
     this.errorMessage.set(null);
     try {
       const [ownProfile, profiles, growthData] = await Promise.all([
-        this.supabase.getProfile(),
-        this.supabase.getAllProfiles(),
-        this.supabase.getGrowthDataForYear(CURRENT_YEAR),
+        this.profileService.getProfile(),
+        this.adminService.getAllProfiles(),
+        this.growthDataService.getGrowthDataForYear(CURRENT_YEAR),
       ]);
       this.profile.set(ownProfile);
       this.allProfiles.set(profiles);
@@ -163,7 +169,7 @@ export class DashboardComponent implements OnInit {
   }
 
   async signOut(): Promise<void> {
-    await this.supabase.signOut();
+    await this.auth.signOut();
     await this.router.navigate(['/login']);
   }
 }

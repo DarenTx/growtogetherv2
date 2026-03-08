@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MarketIndex } from '../../../core/models/market-index.interface';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { MarketDataService } from '../../../core/services/market-data.service';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
@@ -14,7 +14,7 @@ const CURRENT_MONTH = new Date().getMonth() + 1;
   styleUrl: './enter-market-data.component.css',
 })
 export class EnterMarketDataComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly marketDataService = inject(MarketDataService);
   private readonly fb = inject(FormBuilder);
 
   readonly indexes = signal<MarketIndex[]>([]);
@@ -40,7 +40,7 @@ export class EnterMarketDataComponent implements OnInit {
 
   private async loadIndexes(): Promise<void> {
     try {
-      const data = await this.supabase.getMarketIndexes();
+      const data = await this.marketDataService.getMarketIndexes();
       const sorted = [...data].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
@@ -63,7 +63,12 @@ export class EnterMarketDataComponent implements OnInit {
     const { index_name, year, month, growth_pct } = this.form.getRawValue();
 
     try {
-      await this.supabase.saveMarketIndex({ index_name, year, month, growth_pct: growth_pct! });
+      await this.marketDataService.saveMarketIndex({
+        index_name,
+        year,
+        month,
+        growth_pct: growth_pct!,
+      });
       this.successMessage.set('Market index saved.');
 
       // Advance month/year

@@ -9,7 +9,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Session } from '@supabase/supabase-js';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { GrowthDataService } from '../../../core/services/growth-data.service';
 
 const BANK_OPTIONS = ['Fidelity Investments', 'Edward Jones'] as const;
 
@@ -22,7 +23,8 @@ const BANK_OPTIONS = ['Fidelity Investments', 'Edward Jones'] as const;
   styleUrl: './monthly-growth-entry.component.css',
 })
 export class MonthlyGrowthEntryComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
+  private readonly growthDataService = inject(GrowthDataService);
   private readonly destroyRef = inject(DestroyRef);
 
   // Private state
@@ -42,7 +44,6 @@ export class MonthlyGrowthEntryComponent implements OnInit {
 
   // Form controls
   readonly bankControl = new FormControl<string>('Fidelity Investments', { nonNullable: true });
-  readonly isManagedControl = new FormControl<boolean>(false, { nonNullable: true });
   readonly growthPctControl = new FormControl<string>('', { nonNullable: true });
 
   // Constants exposed to template
@@ -60,7 +61,7 @@ export class MonthlyGrowthEntryComponent implements OnInit {
     }).format(prevDate);
 
     // Load session
-    this.session = await this.supabase.getSession();
+    this.session = await this.auth.getSession();
     if (!this.session) {
       this.errorMessage.set('Unable to load session. Please sign in again.');
       return;
@@ -86,14 +87,13 @@ export class MonthlyGrowthEntryComponent implements OnInit {
     this.isLoading.set(true);
     this.loadFailed.set(false);
     try {
-      const record = await this.supabase.getOwnGrowthDataForMonth(
+      const record = await this.growthDataService.getOwnGrowthDataForMonth(
         this.prevYear,
         this.prevMonth,
         this.bankControl.value,
       );
       if (record) {
         this.growthPctControl.setValue(record.growth_pct.toFixed(2));
-        this.isManagedControl.setValue(record.is_managed);
       }
     } catch (err: unknown) {
       console.error('[MonthlyGrowthEntry] loadExistingRecord failed', err);
@@ -103,7 +103,8 @@ export class MonthlyGrowthEntryComponent implements OnInit {
     }
   }
 
-  async onSave(): Promise<void> {
+  async onSave(event?: Event): Promise<void> {
+    event?.preventDefault();
     const rawValue = this.growthPctControl.value.trim();
     this.successMessage.set('');
     this.errorMessage.set('');
@@ -119,20 +120,19 @@ export class MonthlyGrowthEntryComponent implements OnInit {
     this.isSaving.set(true);
     try {
       if (rawValue === '') {
-        await this.supabase.deleteOwnGrowthDataForMonth(
+        await this.growthDataService.deleteOwnGrowthDataForMonth(
           this.prevYear,
           this.prevMonth,
           this.bankControl.value,
         );
         this.successMessage.set('Growth cleared.');
       } else {
-        await this.supabase.saveGrowthData({
+        await this.growthDataService.saveGrowthData({
           email_key: this.session!.user.email!.toLowerCase(),
           user_id: this.session!.user.id,
           year: this.prevYear,
           month: this.prevMonth,
           bank_name: this.bankControl.value,
-          is_managed: this.isManagedControl.value,
           growth_pct: parseFloat(rawValue),
         });
         this.successMessage.set('Growth saved.');

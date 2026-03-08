@@ -80,11 +80,6 @@
         </select>
       </div>
 
-      <div class="gt-checkbox-row">
-        <input id="is_managed" type="checkbox" formControlName="is_managed" />
-        <label for="is_managed">Is Managed</label>
-      </div>
-
       <div class="gt-field">
         <label class="gt-label" for="growth_pct_hist">Growth %</label>
         <input
@@ -130,14 +125,12 @@
         <div class="gt-list-header">
           <span>Yr-Mo</span>
           <span>Bank</span>
-          <span>Managed</span>
           <span>Growth %</span>
         </div>
         @for (g of growthData(); track g.id) {
           <div class="gt-list-row">
             <span>{{ g.year }}-{{ g.month }}</span>
             <span>{{ g.bank_name }}</span>
-            <span>{{ g.is_managed ? 'Yes' : 'No' }}</span>
             <span>{{ g.growth_pct }}%</span>
           </div>
         }

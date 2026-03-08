@@ -26,7 +26,6 @@ CREATE TABLE public.growth_data (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     email_key TEXT NOT NULL CHECK (email_key ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'), 
     bank_name TEXT NOT NULL,
-    is_managed BOOLEAN DEFAULT FALSE, 
     year INTEGER NOT NULL,
     month INTEGER NOT NULL CHECK (month >= 1 AND month <= 12),
     growth_pct DECIMAL(5,2) NOT NULL,

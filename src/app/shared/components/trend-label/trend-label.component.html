@@ -1,0 +1,72 @@
+<div class="flex items-center gap-x-1.5 w-full h-full">
+  <!-- Sparkline SVG – only rendered when 3 or more data points are available -->
+  @if (parsedValues().length > 2) {
+    <svg
+      viewBox="0 0 100 32"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      class="flex-1 min-w-0 overflow-visible"
+    >
+      <polyline
+        [attr.points]="svgPoints()"
+        fill="none"
+        vector-effect="non-scaling-stroke"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="stroke-gray-400"
+      />
+    </svg>
+  }
+
+  <!-- Trend icon – always in DOM; hidden when showIcon is false or trend is flat -->
+  <span
+    class="inline-flex shrink-0 w-4 h-4"
+    [style.visibility]="iconHidden() ? 'collapse' : 'visible'"
+  >
+    @if (trend() === 'up') {
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+        class="w-4 h-4 text-green-600"
+      >
+        <polyline points="2,11 8,5 14,11" />
+      </svg>
+    } @else if (trend() === 'down') {
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+        class="w-4 h-4 text-red-600"
+      >
+        <polyline points="2,5 8,11 14,5" />
+      </svg>
+    }
+  </span>
+
+  <!-- Delta text – always in DOM; hidden when showText is false -->
+  <span
+    class="text-xs font-medium whitespace-nowrap shrink-0"
+    [style.visibility]="showText() ? 'visible' : 'collapse'"
+    [ngClass]="{
+      'text-green-600': trend() === 'up',
+      'text-red-600': trend() === 'down',
+      'text-gray-800': trend() === 'flat',
+    }"
+    >{{ deltaLabel() }}</span
+  >
+
+  <!-- Assistive text for screen readers when both icon and text are hidden -->
+  @if (showSrOnly()) {
+    <span class="sr-only">{{ deltaLabel() }}</span>
+  }
+</div>

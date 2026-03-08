@@ -1,8 +1,8 @@
 import { Location } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuditLog } from '../../core/models/audit-log.interface';
-import { SupabaseService } from '../../core/services/supabase.service';
-import { createMockSupabaseService } from '../../core/testing/mock-supabase.service';
+import { AuditService } from '../../core/services/audit.service';
+import { createMockAuditService } from '../../core/testing/mock-supabase.service';
 import { AuditLogComponent } from './audit-log.component';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -32,12 +32,12 @@ describe('AuditLogComponent', () => {
   let mockService: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    mockService = createMockAuditService();
 
     await TestBed.configureTestingModule({
       imports: [AuditLogComponent],
       providers: [
-        { provide: SupabaseService, useValue: mockService },
+        { provide: AuditService, useValue: mockService },
         { provide: Location, useValue: { back: vi.fn() } },
       ],
     }).compileComponents();

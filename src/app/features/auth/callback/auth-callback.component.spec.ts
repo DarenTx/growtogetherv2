@@ -1,11 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { ProfileService } from '../../../core/services/profile.service';
 import {
   MOCK_PROFILE_COMPLETE,
   MOCK_PROFILE_INCOMPLETE,
   MOCK_SESSION,
-  createMockSupabaseService,
+  createMockAuthService,
+  createMockProfileService,
 } from '../../../core/testing/mock-supabase.service';
 import { AuthCallbackComponent } from './auth-callback.component';
 
@@ -17,7 +19,7 @@ describe('AuthCallbackComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    mockService = { ...createMockAuthService(), ...createMockProfileService() };
     // Prevent immediate navigation in NgOnInit during setup
     mockService['getSession'] = vi.fn().mockResolvedValue(null);
     mockService['onAuthStateChange'] = vi.fn().mockReturnValue({ unsubscribe: vi.fn() });
@@ -31,7 +33,8 @@ describe('AuthCallbackComponent', () => {
           { path: 'login', component: AuthCallbackComponent },
           { path: 'auth/link-expired', component: AuthCallbackComponent },
         ]),
-        { provide: SupabaseService, useValue: mockService },
+        { provide: AuthService, useValue: mockService },
+        { provide: ProfileService, useValue: mockService },
       ],
     }).compileComponents();
 

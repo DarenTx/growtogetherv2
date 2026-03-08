@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { AuditLog } from '../../core/models/audit-log.interface';
-import { SupabaseService } from '../../core/services/supabase.service';
+import { AuditService } from '../../core/services/audit.service';
 
 const MONTH_NAMES = [
   'January',
@@ -35,7 +35,7 @@ const MONTH_NAMES = [
 })
 export class AuditLogComponent implements OnInit {
   // Injected services
-  private readonly supabase = inject(SupabaseService);
+  private readonly auditService = inject(AuditService);
   private readonly location = inject(Location);
 
   // Signals
@@ -61,7 +61,7 @@ export class AuditLogComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
     try {
-      const { rows, total } = await this.supabase.getAuditLogPage(page, this.PAGE_SIZE);
+      const { rows, total } = await this.auditService.getAuditLogPage(page, this.PAGE_SIZE);
       this.rows.set(rows);
       this.totalCount.set(total);
       this.currentPage.set(page);

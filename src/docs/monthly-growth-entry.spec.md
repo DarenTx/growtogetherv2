@@ -41,7 +41,7 @@ If the service query returns more than one row (unexpected duplicate), the compo
 
 ### 3.4 Save vs. Clear Behaviour
 
-- **Save with a value**: Upsert the record via `supabase.saveGrowthData(…)`. All seven required fields are populated — see §6.3 for the full parameter list. `bank_name` comes from the bank dropdown control. `is_managed` comes from the Is Managed checkbox control.
+- **Save with a value**: Upsert the record via `supabase.saveGrowthData(…)`. All six required fields are populated — see §6.3 for the full parameter list. `bank_name` comes from the bank dropdown control.
 - **Save with an empty field**: Delete the matching record for that `(email_key, bank_name, year, month)` via the new `supabase.deleteOwnGrowthDataForMonth(…)` service method. `bank_name` is taken from the bank dropdown control at the time Save is clicked. If no record exists, this is a no-op and the operation still reports success.
 - **No reload after save or delete.** The form retains its current state. There is no second fetch after either operation.
 
@@ -100,11 +100,10 @@ None. All data is derived internally from the current session and the current da
 
 **Form controls**
 
-| Control            | Type                   | Default                  | Description                                                                 |
-| ------------------ | ---------------------- | ------------------------ | --------------------------------------------------------------------------- |
-| `bankControl`      | `FormControl<string>`  | `'Fidelity Investments'` | Bank name dropdown. Changing value triggers `loadExistingRecord()`.         |
-| `isManagedControl` | `FormControl<boolean>` | `false`                  | Is Managed checkbox. Value is passed directly to `saveGrowthData`.          |
-| `growthPctControl` | `FormControl<string>`  | `''`                     | Growth percent text input. Empty string is valid (triggers delete on save). |
+| Control            | Type                  | Default                  | Description                                                                 |
+| ------------------ | --------------------- | ------------------------ | --------------------------------------------------------------------------- |
+| `bankControl`      | `FormControl<string>` | `'Fidelity Investments'` | Bank name dropdown. Changing value triggers `loadExistingRecord()`.         |
+| `growthPctControl` | `FormControl<string>` | `''`                     | Growth percent text input. Empty string is valid (triggers delete on save). |
 
 ### 4.4 Lifecycle
 
@@ -167,12 +166,6 @@ None. All data is derived internally from the current session and the current da
                                           [formControl]="growthPctControl"
                                           [attr.aria-invalid]="errorMessage() !== ''"
         p.gt-field-hint                   "Enter a positive or negative decimal. Leave blank and save to clear."
-
-      // ── Is Managed ────────────────────────────────────────────
-      div.gt-checkbox-row
-        input#is_managed                  type="checkbox"
-                                          [formControl]="isManagedControl"
-        label for="is_managed"            "Is Managed?"
 
       // ── Banners ───────────────────────────────────────────────
       @if (successMessage())
@@ -242,17 +235,16 @@ async deleteOwnGrowthDataForMonth(year: number, month: number, bankName: string)
 
 ### 6.3 Existing: `SupabaseService.saveGrowthData` — Required Parameters
 
-The component calls the existing `saveGrowthData(growthData: Partial<GrowthData>)` method. All seven fields below must be present in the payload; omitting any will result in a database constraint violation or incorrect data.
+The component calls the existing `saveGrowthData(growthData: Partial<GrowthData>)` method. All six fields below must be present in the payload; omitting any will result in a database constraint violation or incorrect data.
 
-| Field        | Type      | Source                                            |
-| ------------ | --------- | ------------------------------------------------- |
-| `email_key`  | `string`  | `session.user.email.toLowerCase()`                |
-| `user_id`    | `string`  | `session.user.id` (the authenticated user's UUID) |
-| `year`       | `number`  | `prevYear` (computed on init)                     |
-| `month`      | `number`  | `prevMonth` (computed on init)                    |
-| `bank_name`  | `string`  | `bankControl.value` at time of save               |
-| `is_managed` | `boolean` | `isManagedControl.value` at time of save          |
-| `growth_pct` | `number`  | `parseFloat(growthPctControl.value.trim())`       |
+| Field        | Type     | Source                                            |
+| ------------ | -------- | ------------------------------------------------- |
+| `email_key`  | `string` | `session.user.email.toLowerCase()`                |
+| `user_id`    | `string` | `session.user.id` (the authenticated user's UUID) |
+| `year`       | `number` | `prevYear` (computed on init)                     |
+| `month`      | `number` | `prevMonth` (computed on init)                    |
+| `bank_name`  | `string` | `bankControl.value` at time of save               |
+| `growth_pct` | `number` | `parseFloat(growthPctControl.value.trim())`       |
 
 > **Note**: Unlike the admin historical-data form (which uses `user_id: null` for placeholder profiles), this component always provides a real `user_id` because the route requires a fully authenticated session.
 
@@ -267,7 +259,6 @@ The component calls the existing `saveGrowthData(growthData: Partial<GrowthData>
 | Growth % may be negative (e.g. `-1.50`)          | Allowed — no minimum constraint                                                                          |
 | Growth % may exceed ±100                         | Allowed — no maximum constraint                                                                          |
 | Blank Growth % on save triggers a delete         | Handled in `onSave()` branch logic                                                                       |
-| Is Managed is always valid                       | Boolean checkbox; no validation required                                                                 |
 
 No Angular `Validators` are attached to any of the three form controls. All validation is performed imperatively inside `onSave()`. The `growthPctControl` uses `type="text"` to permit an empty string, avoiding browser type coercion to `null` that can occur with `type="number"`.
 
@@ -291,11 +282,11 @@ No Angular `Validators` are attached to any of the three form controls. All vali
 | Scenario                                                           | Expected Result                                                                                           |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Component loads                                                    | Bank dropdown defaults to `Fidelity Investments`; Growth % is empty; initial load fires for Fidelity      |
-| Initial load finds an existing record for the default bank         | Growth % pre-filled with `growth_pct.toFixed(2)` (e.g. `"3.75"`); `is_managed` reflects saved value       |
+| Initial load finds an existing record for the default bank         | Growth % pre-filled with `growth_pct.toFixed(2)` (e.g. `"3.75"`)                                          |
 | Initial load finds no existing record                              | Growth % remains empty; `loadFailed` is `false`                                                           |
 | Initial load fails                                                 | `loadFailed` is `true`; soft warning banner shown; form remains enabled for manual entry                  |
 | User changes bank to `Edward Jones`                                | Growth % clears; new fetch fires for Edward Jones; field pre-fills if record found                        |
-| User enters a valid decimal and clicks Save                        | `saveGrowthData` called with all 7 fields; success banner "Growth saved."; field retains entered value    |
+| User enters a valid decimal and clicks Save                        | `saveGrowthData` called with all 6 fields; success banner "Growth saved."; field retains entered value    |
 | User clears the input and clicks Save (record previously existed)  | `deleteOwnGrowthDataForMonth` called; success banner "Growth cleared."; input remains empty               |
 | User clears the input and clicks Save (no record existed)          | Delete is a no-op; success banner "Growth cleared." appears                                               |
 | User enters non-numeric text (e.g. `"abc"`) and clicks Save        | Error banner shown; no database call made; `isSaving` never set to `true`                                 |
@@ -332,28 +323,28 @@ const MOCK_SESSION = {
 
 ### 11.1 Required Test Cases
 
-| #   | Description                                                                                 | Key Assertions                                                                                      |
-| --- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| 1   | Component creates                                                                           | `expect(component).toBeTruthy()`                                                                    |
-| 2   | `displayLabel` reflects previous month on init (run in March)                               | `component.displayLabel` equals `'February 2026'`                                                   |
-| 3   | January boundary — `displayLabel` when mocked date is January                               | `displayLabel` equals `'December <prev year>'`                                                      |
-| 4   | On init, `getOwnGrowthDataForMonth` is called for the default bank `'Fidelity Investments'` | `mockService.getOwnGrowthDataForMonth` called with `(prevYear, prevMonth, 'Fidelity Investments')`  |
-| 5   | Existing record pre-fills `growthPctControl` with `toFixed(2)`                              | Control value equals `'3.75'` when service returns `{ growth_pct: 3.75 }`                           |
-| 6   | No existing record leaves `growthPctControl` empty                                          | Control value equals `''` when service returns `null`                                               |
-| 7   | Load failure sets `loadFailed` to `true`; form is not disabled                              | `component.loadFailed()` is `true`; `growthPctControl.enabled` is `true`                            |
-| 8   | Changing bank clears `growthPctControl` and re-fetches                                      | `mockService.getOwnGrowthDataForMonth` called with new bank name; control value resets to `''`      |
-| 9   | Valid decimal save calls `saveGrowthData` with correct 7-field payload                      | Verify all fields: `email_key`, `user_id`, `year`, `month`, `bank_name`, `is_managed`, `growth_pct` |
-| 10  | Successful save sets `successMessage('Growth saved.')`                                      | `component.successMessage()` equals `'Growth saved.'`                                               |
-| 11  | Blank save calls `deleteOwnGrowthDataForMonth` with correct args                            | `mockService.deleteOwnGrowthDataForMonth` called with `(prevYear, prevMonth, bankControl.value)`    |
-| 12  | Successful delete sets `successMessage('Growth cleared.')`                                  | `component.successMessage()` equals `'Growth cleared.'`                                             |
-| 13  | Non-numeric input does not call `saveGrowthData`                                            | `mockService.saveGrowthData` not called; `errorMessage` is non-empty                                |
-| 14  | Save failure sets `errorMessage`                                                            | `component.errorMessage()` is the error message text from the thrown error                          |
-| 15  | Editing `growthPctControl` clears both banners                                              | Both `successMessage()` and `errorMessage()` equal `''` after value change                          |
-| 16  | `isSaving` is `true` during save and `false` after                                          | Verify using a deferred mock; check signal state during and after the call                          |
+| #   | Description                                                                                 | Key Assertions                                                                                     |
+| --- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 1   | Component creates                                                                           | `expect(component).toBeTruthy()`                                                                   |
+| 2   | `displayLabel` reflects previous month on init (run in March)                               | `component.displayLabel` equals `'February 2026'`                                                  |
+| 3   | January boundary — `displayLabel` when mocked date is January                               | `displayLabel` equals `'December <prev year>'`                                                     |
+| 4   | On init, `getOwnGrowthDataForMonth` is called for the default bank `'Fidelity Investments'` | `mockService.getOwnGrowthDataForMonth` called with `(prevYear, prevMonth, 'Fidelity Investments')` |
+| 5   | Existing record pre-fills `growthPctControl` with `toFixed(2)`                              | Control value equals `'3.75'` when service returns `{ growth_pct: 3.75 }`                          |
+| 6   | No existing record leaves `growthPctControl` empty                                          | Control value equals `''` when service returns `null`                                              |
+| 7   | Load failure sets `loadFailed` to `true`; form is not disabled                              | `component.loadFailed()` is `true`; `growthPctControl.enabled` is `true`                           |
+| 8   | Changing bank clears `growthPctControl` and re-fetches                                      | `mockService.getOwnGrowthDataForMonth` called with new bank name; control value resets to `''`     |
+| 9   | Valid decimal save calls `saveGrowthData` with correct 6-field payload                      | Verify all fields: `email_key`, `user_id`, `year`, `month`, `bank_name`, `growth_pct`              |
+| 10  | Successful save sets `successMessage('Growth saved.')`                                      | `component.successMessage()` equals `'Growth saved.'`                                              |
+| 11  | Blank save calls `deleteOwnGrowthDataForMonth` with correct args                            | `mockService.deleteOwnGrowthDataForMonth` called with `(prevYear, prevMonth, bankControl.value)`   |
+| 12  | Successful delete sets `successMessage('Growth cleared.')`                                  | `component.successMessage()` equals `'Growth cleared.'`                                            |
+| 13  | Non-numeric input does not call `saveGrowthData`                                            | `mockService.saveGrowthData` not called; `errorMessage` is non-empty                               |
+| 14  | Save failure sets `errorMessage`                                                            | `component.errorMessage()` is the error message text from the thrown error                         |
+| 15  | Editing `growthPctControl` clears both banners                                              | Both `successMessage()` and `errorMessage()` equal `''` after value change                         |
+| 16  | `isSaving` is `true` during save and `false` after                                          | Verify using a deferred mock; check signal state during and after the call                         |
 
 ### 11.2 Test Setup Notes
 
 - Override `getSession` on `mockService` to return `MOCK_SESSION` for all tests.
-- Override `getOwnGrowthDataForMonth` to return `null` by default; set return values per test.
+- Override `getOwnGrowthDataForMonth` to return `null` by default (no `is_managed` field needed); set return values per test.
 - Override `saveGrowthData` and `deleteOwnGrowthDataForMonth` to return `Promise.resolve(undefined)`.
 - For the January boundary test (case 3), use `vi.setSystemTime()` to mock `new Date()` before creating the component, and restore it with `vi.useRealTimers()` in `afterEach`.

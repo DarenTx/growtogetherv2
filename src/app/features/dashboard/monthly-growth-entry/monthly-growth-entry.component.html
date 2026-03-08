@@ -4,7 +4,12 @@
   <p class="gt-section-subtitle">Enter Monthly Growth</p>
 
   <div class="gt-card">
-    <form class="gt-form" novalidate aria-label="Monthly growth entry form" (ngSubmit)="onSave()">
+    <form
+      class="gt-form"
+      novalidate
+      aria-label="Monthly growth entry form"
+      (submit)="onSave($event)"
+    >
       <!-- ── Bank Name ─────────────────────────────────────────── -->
       <div class="gt-field">
         <label class="gt-label" for="bank_name">Bank Name</label>
@@ -13,12 +18,6 @@
             <option [value]="opt">{{ opt }}</option>
           }
         </select>
-      </div>
-
-      <!-- ── Is Managed ────────────────────────────────────────── -->
-      <div class="gt-checkbox-row">
-        <input id="is_managed" type="checkbox" [formControl]="isManagedControl" />
-        <label for="is_managed">Is Managed?</label>
       </div>
 
       <!-- ── Loading / load-failed feedback ───────────────────── -->
