@@ -77,10 +77,9 @@
       </table>
     </div>
 
-    <br />
-    <hr />
-    <br />
-
-    <app-monthly-growth-entry />
+    @if (profile()?.id) {
+      <app-classic-scorecard [year]="currentYear" [month]="currentMonth" [uuid]="profile()!.id" />
+      <app-classic-scorecard [year]="prevMonthYear" [month]="prevMonth" [uuid]="profile()!.id" />
+    }
   }
 </div>

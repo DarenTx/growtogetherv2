@@ -13,9 +13,12 @@ import { AdminService } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrowthDataService } from '../../core/services/growth-data.service';
 import { ProfileService } from '../../core/services/profile.service';
-import { MonthlyGrowthEntryComponent } from './monthly-growth-entry/monthly-growth-entry.component';
+import { ClassicScorecardComponent } from '../../shared/components/classic-scorecard/classic-scorecard.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_MONTH = new Date().getMonth() + 1;
+const PREV_MONTH = CURRENT_MONTH === 1 ? 12 : CURRENT_MONTH - 1;
+const PREV_MONTH_YEAR = CURRENT_MONTH === 1 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
 
 export const MONTHS = [
   'Jan',
@@ -46,7 +49,7 @@ export interface DashboardRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MonthlyGrowthEntryComponent],
+  imports: [RouterLink, ClassicScorecardComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -58,6 +61,9 @@ export class DashboardComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly currentYear = CURRENT_YEAR;
+  readonly currentMonth = CURRENT_MONTH;
+  readonly prevMonth = PREV_MONTH;
+  readonly prevMonthYear = PREV_MONTH_YEAR;
   readonly months = MONTHS;
 
   readonly profile = signal<Profile | null>(null);
