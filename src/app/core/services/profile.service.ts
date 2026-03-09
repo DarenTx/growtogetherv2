@@ -75,8 +75,15 @@ export class ProfileService {
   }
 
   async isAdmin(): Promise<boolean> {
-    const profile = await this.getProfile();
-    return profile?.is_admin ?? false;
+    const session = await this.auth.getSession();
+    if (!session) return false;
+    const { data, error } = await this.client
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', session.user.id)
+      .single();
+    if (error) return false;
+    return (data as { is_admin: boolean } | null)?.is_admin ?? false;
   }
 
   async getRegisteredProfiles(): Promise<Profile[]> {

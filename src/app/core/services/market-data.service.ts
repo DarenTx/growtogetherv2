@@ -32,7 +32,9 @@ export class MarketDataService {
 
   async saveMarketIndex(marketIndex: Partial<MarketIndex>): Promise<void> {
     this.logger.debug('Saving market index', marketIndex);
-    const { error } = await this.client.from('market_indexes').upsert(marketIndex);
+    const { error } = await this.client
+      .from('market_indexes')
+      .upsert(marketIndex, { onConflict: 'index_name,year,month' });
     if (error) {
       this.logger.error('saveMarketIndex failed', error);
       throw error;

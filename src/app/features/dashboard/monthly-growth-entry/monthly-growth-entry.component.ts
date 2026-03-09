@@ -117,6 +117,14 @@ export class MonthlyGrowthEntryComponent implements OnInit {
       }
     }
 
+    const userEmail = this.session?.user.email;
+    if (!userEmail) {
+      this.errorMessage.set(
+        'Growth data requires an email address. Phone-only accounts cannot use this feature.',
+      );
+      return;
+    }
+
     this.isSaving.set(true);
     try {
       if (rawValue === '') {
@@ -128,7 +136,7 @@ export class MonthlyGrowthEntryComponent implements OnInit {
         this.successMessage.set('Growth cleared.');
       } else {
         await this.growthDataService.saveGrowthData({
-          email_key: this.session!.user.email!.toLowerCase(),
+          email_key: userEmail.toLowerCase(),
           user_id: this.session!.user.id,
           year: this.prevYear,
           month: this.prevMonth,

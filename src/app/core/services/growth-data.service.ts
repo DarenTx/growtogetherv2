@@ -51,7 +51,15 @@ export class GrowthDataService {
       return null;
     }
 
-    const emailKey = session.user.email!.toLowerCase();
+    const email = session.user.email;
+    if (!email) {
+      this.logger.warn(
+        'getOwnGrowthDataForMonth: user has no email (phone-auth only); cannot look up by email_key',
+      );
+      return null;
+    }
+
+    const emailKey = email.toLowerCase();
     const { data, error } = await this.client
       .from('growth_data')
       .select('*')
@@ -81,11 +89,12 @@ export class GrowthDataService {
       throw new Error('Not authenticated');
     }
 
-    const emailKey = session.user.email!.toLowerCase();
+    // Filter by user_id to align with the RLS policy (USING user_id = auth.uid()).
+    // Filtering by email_key would silently no-op on admin-imported rows where user_id IS NULL.
     const { error } = await this.client
       .from('growth_data')
       .delete()
-      .eq('email_key', emailKey)
+      .eq('user_id', session.user.id)
       .eq('year', year)
       .eq('month', month)
       .eq('bank_name', bankName);
@@ -160,10 +169,14 @@ export class GrowthDataService {
 
   async getPersonBankList(): Promise<PersonBankEntry[]> {
     this.logger.debug('Fetching person-bank list');
+    // Queries the person_bank_list view which uses DISTINCT ON in SQL,
+    // avoiding a full growth_data scan and client-side deduplication.
     const { data, error } = await this.client
-      .from('growth_data')
-      .select('user_id, bank_name, profiles(first_name, last_name)')
-      .not('user_id', 'is', null);
+      .from('person_bank_list')
+      .select('user_id, bank_name, first_name, last_name')
+      .order('last_name')
+      .order('first_name')
+      .order('bank_name');
 
     if (error) {
       this.logger.error('getPersonBankList failed', error);
@@ -174,23 +187,16 @@ export class GrowthDataService {
       (data as unknown as Array<{
         user_id: string;
         bank_name: string;
-        profiles: { first_name: string | null; last_name: string | null } | null;
+        first_name: string | null;
+        last_name: string | null;
       }>) ?? [];
 
-    // De-duplicate on (user_id, bank_name)
-    const seen = new Set<string>();
-    const entries: PersonBankEntry[] = [];
-    for (const row of rows) {
-      const key = `${row.user_id}|${row.bank_name}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      entries.push({
-        userId: row.user_id,
-        firstName: row.profiles?.first_name ?? 'Unknown',
-        lastName: row.profiles?.last_name ?? 'Person',
-        bankName: row.bank_name,
-      });
-    }
+    const entries: PersonBankEntry[] = rows.map((row) => ({
+      userId: row.user_id,
+      firstName: row.first_name ?? 'Unknown',
+      lastName: row.last_name ?? 'Person',
+      bankName: row.bank_name,
+    }));
 
     entries.sort((a, b) => {
       const lastCmp = a.lastName.toLowerCase().localeCompare(b.lastName.toLowerCase());
