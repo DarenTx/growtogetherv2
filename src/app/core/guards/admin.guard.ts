@@ -1,17 +1,19 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { SupabaseService } from '../services/supabase.service';
+import { AuthService } from '../services/auth.service';
+import { ProfileService } from '../services/profile.service';
 
 export const adminGuard: CanActivateFn = async () => {
-  const supabase = inject(SupabaseService);
+  const auth = inject(AuthService);
+  const profileService = inject(ProfileService);
   const router = inject(Router);
 
-  const session = await supabase.getSession();
+  const session = await auth.getSession();
   if (!session) {
     return router.createUrlTree(['/login']);
   }
 
-  const isAdmin = await supabase.isAdmin();
+  const isAdmin = await profileService.isAdmin();
   if (!isAdmin) {
     return router.createUrlTree(['/dashboard']);
   }

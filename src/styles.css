@@ -302,6 +302,23 @@
     margin-top: 0.5rem;
   }
 
+  /* ── Inline link ────────────────────────────────────────────── */
+  .gt-link {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+  }
+
+  .gt-link:hover {
+    color: var(--color-primary-hover, var(--color-primary));
+    text-decoration-thickness: 2px;
+  }
+
   /* ── Alerts & banners ───────────────────────────────────────── */
   .gt-banner {
     padding: 0.75rem 1rem;
@@ -545,6 +562,20 @@
   .gt-table td.col-month.negative,
   .gt-table td.col-month.zero {
     color: unset;
+  }
+
+  /* ── Pagination ─────────────────────────────────────────────── */
+  .gt-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+
+  .gt-page-indicator {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
   }
 
   /* ── Utility helpers ────────────────────────────────────────── */

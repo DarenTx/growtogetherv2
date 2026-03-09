@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AdminService } from '../../../core/services/admin.service';
+import { GrowthDataService } from '../../../core/services/growth-data.service';
 import {
   MOCK_PROFILE_COMPLETE,
-  createMockSupabaseService,
+  createMockAdminService,
+  createMockGrowthDataService,
 } from '../../../core/testing/mock-supabase.service';
 import { EnterHistoricalDataComponent } from './enter-historical-data.component';
 
@@ -14,7 +16,6 @@ const MOCK_GROWTH = [
     id: 'g-1',
     email_key: 'john@example.com',
     bank_name: 'Fidelity Investments',
-    is_managed: false,
     year: 2024,
     month: 1,
     growth_pct: 4.2,
@@ -31,14 +32,18 @@ describe('EnterHistoricalDataComponent', () => {
   let mockService: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    mockService = { ...createMockAdminService(), ...createMockGrowthDataService() };
     mockService['getAllProfiles'] = vi.fn().mockResolvedValue(MOCK_PROFILES);
     mockService['saveGrowthData'] = vi.fn().mockResolvedValue(undefined);
     mockService['getGrowthDataByEmailKey'] = vi.fn().mockResolvedValue(MOCK_GROWTH);
 
     await TestBed.configureTestingModule({
       imports: [EnterHistoricalDataComponent],
-      providers: [provideRouter([]), { provide: SupabaseService, useValue: mockService }],
+      providers: [
+        provideRouter([]),
+        { provide: AdminService, useValue: mockService },
+        { provide: GrowthDataService, useValue: mockService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EnterHistoricalDataComponent);
@@ -85,7 +90,6 @@ describe('EnterHistoricalDataComponent', () => {
       year: 2024,
       month: 3,
       bank_name: 'Fidelity Investments',
-      is_managed: false,
       growth_pct: 5.1,
     });
     await component.onSubmit();
@@ -96,7 +100,6 @@ describe('EnterHistoricalDataComponent', () => {
         year: 2024,
         month: 3,
         bank_name: 'Fidelity Investments',
-        is_managed: false,
         growth_pct: 5.1,
       }),
     );
@@ -111,7 +114,6 @@ describe('EnterHistoricalDataComponent', () => {
       year: 2024,
       month: 12,
       bank_name: 'Edward Jones',
-      is_managed: true,
       growth_pct: 2.0,
     });
     await component.onSubmit();
@@ -127,7 +129,6 @@ describe('EnterHistoricalDataComponent', () => {
       year: 2024,
       month: 1,
       bank_name: 'Fidelity Investments',
-      is_managed: false,
       growth_pct: 1.0,
     });
     await component.onSubmit();
@@ -140,7 +141,6 @@ describe('EnterHistoricalDataComponent', () => {
     component.clearAll();
     expect(component.selectedProfile()).toBeNull();
     expect(component.form.controls.bank_name.value).toBe('Fidelity Investments');
-    expect(component.form.controls.is_managed.value).toBe(false);
     expect(component.showGrowthData()).toBe(false);
   });
 });

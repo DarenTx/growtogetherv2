@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Profile } from '../../../core/models/profile.interface';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AdminService } from '../../../core/services/admin.service';
 
 @Component({
   selector: 'app-enter-profiles',
@@ -11,7 +11,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
   styleUrl: './enter-profiles.component.css',
 })
 export class EnterProfilesComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly adminService = inject(AdminService);
   private readonly fb = inject(FormBuilder);
 
   readonly profiles = signal<Profile[]>([]);
@@ -31,7 +31,7 @@ export class EnterProfilesComponent implements OnInit {
 
   private async loadProfiles(): Promise<void> {
     try {
-      const list = await this.supabase.getAllProfiles();
+      const list = await this.adminService.getAllProfiles();
       this.profiles.set(list);
     } catch {
       // non-fatal: list just remains empty
@@ -50,7 +50,7 @@ export class EnterProfilesComponent implements OnInit {
 
     try {
       const { first_name, last_name, email } = this.form.getRawValue();
-      await this.supabase.adminCreateProfile({ first_name, last_name, email });
+      await this.adminService.adminCreateProfile({ first_name, last_name, email });
       this.successMessage.set('Profile created successfully.');
       this.form.reset();
       await this.loadProfiles();

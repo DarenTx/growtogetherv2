@@ -15,6 +15,7 @@
           <a routerLink="/admin/profiles" class="gt-nav-link">Profiles</a>
           <a routerLink="/admin/market-data" class="gt-nav-link">Market Data</a>
           <a routerLink="/admin/historical-data" class="gt-nav-link">Historical Data</a>
+          <a routerLink="/audit-log" class="gt-nav-link">Activity Log</a>
         }
         <button type="button" class="gt-sign-out" (click)="signOut()">Sign Out</button>
       </nav>
@@ -75,5 +76,10 @@
         </tbody>
       </table>
     </div>
+
+    @if (profile()?.id) {
+      <app-classic-scorecard [year]="currentYear" [month]="currentMonth" [uuid]="profile()!.id" />
+      <app-classic-scorecard [year]="prevMonthYear" [month]="prevMonth" [uuid]="profile()!.id" />
+    }
   }
 </div>

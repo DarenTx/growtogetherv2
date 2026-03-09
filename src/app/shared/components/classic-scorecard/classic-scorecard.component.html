@@ -1,0 +1,219 @@
+<div class="gt-card" [attr.aria-label]="cardAriaLabel()">
+  @switch (state()) {
+    @case ('loading') {
+      <p class="text-center text-text-muted">Loading…</p>
+    }
+
+    @case ('error') {
+      <div class="gt-banner gt-banner-error" role="alert">{{ loadError() }}</div>
+    }
+
+    @case ('current-entry') {
+      <h2 class="gt-page-title">{{ cardTitle() }}</h2>
+      <form class="gt-form" aria-label="Monthly growth entry form" novalidate (ngSubmit)="onSave()">
+        <div class="gt-field">
+          <label class="gt-label" for="entry-growth-pct">Enter Growth / Loss</label>
+          <input
+            id="entry-growth-pct"
+            class="gt-input"
+            type="text"
+            inputmode="decimal"
+            placeholder="e.g. 3.75 or -1.50"
+            [formControl]="growthPctControl"
+          />
+        </div>
+
+        <div class="gt-field">
+          <label class="gt-label" for="entry-bank">Bank</label>
+          <select id="entry-bank" class="gt-select" [formControl]="bankControl">
+            @for (opt of bankOptions; track opt) {
+              <option [value]="opt">{{ opt }}</option>
+            }
+          </select>
+        </div>
+
+        @if (saveSuccess()) {
+          <div class="gt-banner gt-banner-success" role="status">{{ saveSuccess() }}</div>
+        }
+        @if (saveError()) {
+          <div class="gt-banner gt-banner-error" role="alert">{{ saveError() }}</div>
+        }
+
+        <div class="gt-btn-row">
+          <button class="gt-btn gt-btn-primary" type="submit" [disabled]="isSaving()">Save</button>
+        </div>
+      </form>
+    }
+  }
+
+  <!-- Angular @switch does not support fall-through; use @if to share the
+       layout between 'historical' and 'current-data' states. -->
+  @if (state() === 'historical' || state() === 'current-data') {
+    <!-- Card header -->
+    <h2 class="gt-page-title">{{ cardTitle() }}</h2>
+
+    <!-- Main growth area (flex row) — items-stretch makes the icon fill the
+         height of the right column (growth % text + sparkline). -->
+    <div class="flex items-stretch gap-x-3 mb-3">
+      <!-- Large trend icon (left column) -->
+      @if (userGrowthPct() !== null) {
+        <svg
+          class="w-12 h-full shrink-0"
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          [class.text-success]="userGrowthPct()! > 0"
+          [class.text-error]="userGrowthPct()! < 0"
+          [class.text-text-muted]="userGrowthPct() === 0"
+        >
+          @if (userGrowthPct()! >= 0) {
+            <path d="M12 4l8 8H4z" />
+          } @else {
+            <path d="M12 20l-8-8h16z" />
+          }
+        </svg>
+      }
+
+      <!-- Right column: growth pct + sparkline -->
+      <div class="flex flex-col gap-y-1">
+        <span
+          class="text-4xl font-bold"
+          [class.text-success]="userGrowthPct() !== null && userGrowthPct()! > 0"
+          [class.text-error]="userGrowthPct() !== null && userGrowthPct()! < 0"
+          [class.text-text-muted]="userGrowthPct() === null || userGrowthPct() === 0"
+        >
+          {{ formattedGrowthPct() }}
+          <span class="sr-only">
+            @if (userGrowthPct() !== null) {
+              @if (userGrowthPct()! > 0) {
+                Positive growth: {{ formattedGrowthPct() }}
+              } @else if (userGrowthPct()! < 0) {
+                Negative growth: {{ formattedGrowthPct() }}
+              } @else {
+                Neutral growth: {{ formattedGrowthPct() }}
+              }
+            }
+          </span>
+        </span>
+
+        <div class="h-8">
+          <app-trend-label [data]="ytdDataString()" [showIcon]="true" [showText]="true" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Market comparison row -->
+    <div class="flex flex-wrap justify-between items-center gap-y-1 mb-1 text-sm">
+      <!-- Dow Jones -->
+      @if (dowGrowthPct() !== null) {
+        <div class="flex items-center gap-x-1">
+          <svg
+            class="w-4 h-4 shrink-0"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            [class.text-success]="dowGrowthPct()! > 0"
+            [class.text-error]="dowGrowthPct()! < 0"
+            [class.text-text-muted]="dowGrowthPct() === 0"
+          >
+            @if (dowGrowthPct()! >= 0) {
+              <path d="M12 4l8 8H4z" />
+            } @else {
+              <path d="M12 20l-8-8h16z" />
+            }
+          </svg>
+          <span
+            [class.text-success]="dowGrowthPct()! > 0"
+            [class.text-error]="dowGrowthPct()! < 0"
+            [class.text-text-muted]="dowGrowthPct() === 0"
+            >{{ formattedDowPct() }}</span
+          >
+          <span class="text-text-muted">vs Dow</span>
+        </div>
+      }
+
+      <!-- S&P 500 -->
+      @if (sp500GrowthPct() !== null) {
+        <div class="flex items-center gap-x-1">
+          <svg
+            class="w-4 h-4 shrink-0"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            [class.text-success]="sp500GrowthPct()! > 0"
+            [class.text-error]="sp500GrowthPct()! < 0"
+            [class.text-text-muted]="sp500GrowthPct() === 0"
+          >
+            @if (sp500GrowthPct()! >= 0) {
+              <path d="M12 4l8 8H4z" />
+            } @else {
+              <path d="M12 20l-8-8h16z" />
+            }
+          </svg>
+          <span
+            [class.text-success]="sp500GrowthPct()! > 0"
+            [class.text-error]="sp500GrowthPct()! < 0"
+            [class.text-text-muted]="sp500GrowthPct() === 0"
+            >{{ formattedSp500Pct() }}</span
+          >
+          <span class="text-text-muted">vs S&amp;P 500</span>
+        </div>
+      }
+    </div>
+
+    <!-- Player average + rank row -->
+    <div class="flex justify-between items-center mt-2 text-sm">
+      <!-- Player Avg -->
+      @if (playerAvgDiff() !== null) {
+        <div class="flex items-center gap-x-1">
+          <svg
+            class="w-4 h-4 shrink-0"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            [class.text-success]="playerAvgDiff()! > 0"
+            [class.text-error]="playerAvgDiff()! < 0"
+            [class.text-text-muted]="playerAvgDiff() === 0"
+          >
+            @if (playerAvgDiff()! >= 0) {
+              <path d="M12 4l8 8H4z" />
+            } @else {
+              <path d="M12 20l-8-8h16z" />
+            }
+          </svg>
+          <span
+            [class.text-success]="playerAvgDiff()! > 0"
+            [class.text-error]="playerAvgDiff()! < 0"
+            [class.text-text-muted]="playerAvgDiff() === 0"
+            >{{ formattedPlayerAvgDiff() }}</span
+          >
+          <span class="text-text-muted">Player Avg</span>
+        </div>
+      }
+
+      <!-- Rank -->
+      @if (userRank() !== null) {
+        <p class="text-text-secondary font-medium">
+          Rank: {{ userRank() }}/{{ totalPlayerCount() }}
+          @if (state() === 'current-data') {
+            <span class="text-xs text-text-muted"> (partial)</span>
+          }
+        </p>
+      }
+    </div>
+
+    <!-- Current-data-only footer -->
+    @if (state() === 'current-data') {
+      <div class="mt-3 text-center">
+        <p class="text-sm text-text-muted">
+          @if (waitingCount() > 0) {
+            Waiting on {{ waitingCount() }} of {{ totalPlayerCount() }} players
+          } @else {
+            All players have submitted.
+          }
+        </p>
+        <p class="text-xs text-text-muted">{{ cutoffDateLabel }}</p>
+      </div>
+    }
+  }
+</div>

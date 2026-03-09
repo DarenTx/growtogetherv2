@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AdminService } from '../../../core/services/admin.service';
 import {
   MOCK_PROFILE_COMPLETE,
-  createMockSupabaseService,
+  createMockAdminService,
 } from '../../../core/testing/mock-supabase.service';
 import { EnterProfilesComponent } from './enter-profiles.component';
 
@@ -16,13 +16,13 @@ describe('EnterProfilesComponent', () => {
   let mockService: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    mockService = createMockAdminService();
     mockService['getAllProfiles'] = vi.fn().mockResolvedValue(MOCK_PROFILES);
     mockService['adminCreateProfile'] = vi.fn().mockResolvedValue(undefined);
 
     await TestBed.configureTestingModule({
       imports: [EnterProfilesComponent],
-      providers: [provideRouter([]), { provide: SupabaseService, useValue: mockService }],
+      providers: [provideRouter([]), { provide: AdminService, useValue: mockService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EnterProfilesComponent);

@@ -1,0 +1,24 @@
+@if (errorMessage()) {
+  <p class="gt-field-error">{{ errorMessage() }}</p>
+}
+
+@if (!errorMessage()) {
+  @if (entries().length === 0 && !isLoading()) {
+    <p>No players found</p>
+  } @else {
+    <div class="gt-field">
+      <label class="gt-label" for="person-selector">Select Member</label>
+      <select
+        id="person-selector"
+        class="gt-select"
+        [disabled]="isLoading()"
+        [value]="selectedKey()"
+        (change)="onSelectionChange($event)"
+      >
+        @for (item of displayEntries(); track item.key) {
+          <option [value]="item.key">{{ item.label }}</option>
+        }
+      </select>
+    </div>
+  }
+}

@@ -177,7 +177,6 @@ Allow the administrator to enter per-user historical growth records. Each record
 | Year           | Number            | `growth_data.year`                | Required, integer, 2001–2100                                                                                                                     |
 | Month          | Number            | `growth_data.month`               | Required, integer, 1–12                                                                                                                          |
 | Bank Name      | Select (dropdown) | `growth_data.bank_name`           | Required; fixed options: `Fidelity Investments`, `Edward Jones`; pre-filled with `Fidelity Investments` on page load; persists after each submit |
-| Is Managed     | Checkbox / Toggle | `growth_data.is_managed`          | Defaults to `false`; persists after each submit                                                                                                  |
 | Growth Percent | Decimal           | `growth_data.growth_pct`          | Required, decimal (up to 2 decimal places)                                                                                                       |
 
 ### 8.4 Hidden / Auto-set Fields
@@ -192,8 +191,8 @@ Allow the administrator to enter per-user historical growth records. Each record
 ### 8.5 Behavior
 
 - On init: fetch all profiles and populate the Profile dropdown. Show a loading indicator while fetching. If the fetch fails, show an error and **disable the form** until a successful reload.
-- On successful submit: display an inline success message; clear only the Growth Percent field; leave Profile, Year, Month, Bank Name, and Is Managed unchanged; advance Year/Month by one month (month 12 rolls to month 1 of the following year); update the growth data list for the selected profile.
-- Include a "Clear All" button that resets all fields to their defaults (Profile cleared, Year/Month reset, Bank Name reset to `Fidelity Investments`, Is Managed reset to `false`, Growth Percent cleared).
+- On successful submit: display an inline success message; clear only the Growth Percent field; leave Profile, Year, Month, and Bank Name unchanged; advance Year/Month by one month (month 12 rolls to month 1 of the following year); update the growth data list for the selected profile.
+- Include a "Clear All" button that resets all fields to their defaults (Profile cleared, Year/Month reset, Bank Name reset to `Fidelity Investments`, Growth Percent cleared).
 - On submit error: display an inline error message; do not clear any fields.
 - No navigation away on success.
 
@@ -226,7 +225,7 @@ Allow the administrator to enter per-user historical growth records. Each record
 | Admin submits historical data without selecting a profile | Validation error shown, form not submitted                                                   |
 | Admin submits historical data with year outside 2001–2100 | Validation error shown, form not submitted                                                   |
 | Admin clicks "Clear All" on market data page              | All fields reset                                                                             |
-| Admin clicks "Clear All" on historical data page          | All fields reset to defaults (Bank Name → `Fidelity Investments`, Is Managed → `false`)      |
+| Admin clicks "Clear All" on historical data page          | All fields reset to defaults (Bank Name → `Fidelity Investments`)                            |
 | Dashboard viewed as non-admin                             | No admin nav links visible                                                                   |
 | Dashboard viewed as admin                                 | Three admin nav links visible and functional                                                 |
 

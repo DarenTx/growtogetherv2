@@ -1,11 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { ProfileService } from '../../../core/services/profile.service';
 import {
   MOCK_PROFILE_COMPLETE,
   MOCK_PROFILE_INCOMPLETE,
   MOCK_SESSION,
-  createMockSupabaseService,
+  createMockAuthService,
+  createMockProfileService,
 } from '../../../core/testing/mock-supabase.service';
 import { RegistrationComponent } from './registration.component';
 
@@ -17,7 +19,8 @@ describe('RegistrationComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    // Combine auth + profile mocks into one object for convenience
+    mockService = { ...createMockAuthService(), ...createMockProfileService() };
     mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
     mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_INCOMPLETE);
     mockService['completeRegistration'] = vi.fn().mockResolvedValue(true);
@@ -29,7 +32,8 @@ describe('RegistrationComponent', () => {
           { path: 'dashboard', component: RegistrationComponent },
           { path: 'login', component: RegistrationComponent },
         ]),
-        { provide: SupabaseService, useValue: mockService },
+        { provide: AuthService, useValue: mockService },
+        { provide: ProfileService, useValue: mockService },
       ],
     }).compileComponents();
 
