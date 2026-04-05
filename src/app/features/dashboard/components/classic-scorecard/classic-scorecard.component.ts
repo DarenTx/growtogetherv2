@@ -228,13 +228,27 @@ export class ClassicScorecardComponent implements OnInit {
     return fmt(v);
   });
 
+  readonly dowDiff = computed((): number | null => {
+    const user = this.userGrowthPct();
+    const dow = this.dowGrowthPct();
+    if (user === null || dow === null) return null;
+    return user - dow;
+  });
+
+  readonly sp500Diff = computed((): number | null => {
+    const user = this.userGrowthPct();
+    const sp = this.sp500GrowthPct();
+    if (user === null || sp === null) return null;
+    return user - sp;
+  });
+
   readonly formattedDowPct = computed((): string => {
-    const v = this.dowGrowthPct();
+    const v = this.dowDiff();
     return v !== null ? fmt(v) : '';
   });
 
   readonly formattedSp500Pct = computed((): string => {
-    const v = this.sp500GrowthPct();
+    const v = this.sp500Diff();
     return v !== null ? fmt(v) : '';
   });
 
