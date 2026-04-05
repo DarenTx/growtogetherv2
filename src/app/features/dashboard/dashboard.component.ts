@@ -14,31 +14,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { GrowthDataService } from '../../core/services/growth-data.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { ClassicScorecardComponent } from '../../shared/components/classic-scorecard/classic-scorecard.component';
-import { SelectYearComponent } from '../../shared/components/select-year/select-year.component';
-import { TrendLabelComponent } from '../../shared/components/trend-label/trend-label.component';
+import { GrowthGridComponent } from './components/growth-grid/growth-grid.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
 const PREV_MONTH = CURRENT_MONTH === 1 ? 12 : CURRENT_MONTH - 1;
 const PREV_MONTH_YEAR = CURRENT_MONTH === 1 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
-
-export const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-] as const;
-
-type SortColumn = 'name' | `month-${number}`;
-type SortDirection = 'asc' | 'desc';
 
 export interface DashboardRow {
   profileId: string;
@@ -51,7 +32,7 @@ export interface DashboardRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ClassicScorecardComponent, SelectYearComponent, TrendLabelComponent],
+  imports: [RouterLink, ClassicScorecardComponent, GrowthGridComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -67,7 +48,6 @@ export class DashboardComponent implements OnInit {
   readonly currentMonth = CURRENT_MONTH;
   readonly prevMonth = PREV_MONTH;
   readonly prevMonthYear = PREV_MONTH_YEAR;
-  readonly months = MONTHS;
 
   readonly profile = signal<Profile | null>(null);
   readonly isAdmin = computed(() => this.profile()?.is_admin ?? false);
@@ -78,14 +58,9 @@ export class DashboardComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
 
-  readonly sortColumn = signal<SortColumn>('name');
-  readonly sortDirection = signal<SortDirection>('asc');
-
   readonly rows = computed<DashboardRow[]>(() => {
     const profiles = this.allProfiles();
     const growthData = this.growthData();
-    const col = this.sortColumn();
-    const dir = this.sortDirection();
 
     // Build lookup: lowercased email_key → month index (0-based) → first growth_pct seen
     const lookup = new Map<string, Map<number, number>>();
@@ -97,7 +72,7 @@ export class DashboardComponent implements OnInit {
       if (!monthMap.has(idx)) monthMap.set(idx, gd.growth_pct);
     }
 
-    const rows: DashboardRow[] = profiles.map((p) => ({
+    return profiles.map((p) => ({
       profileId: p.id,
       firstName: p.first_name ?? '',
       lastName: p.last_name ?? '',
@@ -106,32 +81,6 @@ export class DashboardComponent implements OnInit {
         return lookup.get(key)?.get(i) ?? null;
       }),
     }));
-
-    rows.sort((a, b) => {
-      let cmp = 0;
-      if (col === 'name') {
-        const la = a.lastName.toLowerCase();
-        const lb = b.lastName.toLowerCase();
-        cmp = la < lb ? -1 : la > lb ? 1 : 0;
-        if (cmp === 0) {
-          const fa = a.firstName.toLowerCase();
-          const fb = b.firstName.toLowerCase();
-          cmp = fa < fb ? -1 : fa > fb ? 1 : 0;
-        }
-      } else {
-        const idx = parseInt(col.replace('month-', ''), 10);
-        const va = a.months[idx];
-        const vb = b.months[idx];
-        if (va === null && vb === null) cmp = 0;
-        else if (va === null)
-          cmp = 1; // nulls last
-        else if (vb === null) cmp = -1;
-        else cmp = va - vb;
-      }
-      return dir === 'asc' ? cmp : -cmp;
-    });
-
-    return rows;
   });
 
   async ngOnInit(): Promise<void> {
@@ -165,34 +114,6 @@ export class DashboardComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
-  }
-
-  sortBy(col: SortColumn): void {
-    if (this.sortColumn() === col) {
-      this.sortDirection.update((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      this.sortColumn.set(col);
-      this.sortDirection.set('asc');
-    }
-  }
-
-  monthSortId(index: number): SortColumn {
-    return `month-${index}` as SortColumn;
-  }
-
-  sortIndicator(col: SortColumn): string {
-    if (this.sortColumn() !== col) return '';
-    return this.sortDirection() === 'asc' ? ' ▲' : ' ▼';
-  }
-
-  trendData(months: (number | null)[]): string {
-    return months.filter((v): v is number => v !== null).join(',');
-  }
-
-  formatPct(value: number | null): string {
-    if (value === null) return '';
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(2)}%`;
   }
 
   async signOut(): Promise<void> {
