@@ -14,6 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { GrowthDataService } from '../../core/services/growth-data.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { ClassicScorecardComponent } from '../../shared/components/classic-scorecard/classic-scorecard.component';
+import { PersonSelectorComponent } from '../../shared/components/person-selector/person-selector.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
@@ -49,7 +50,7 @@ export interface DashboardRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ClassicScorecardComponent],
+  imports: [RouterLink, ClassicScorecardComponent, PersonSelectorComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })

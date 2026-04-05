@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
+import { Footer } from './shared/components/footer/footer';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, Footer],
   styleUrl: 'app.css',
   template: `
     <div class="app-shell">
@@ -17,6 +18,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
       <main class="app-main">
         <router-outlet />
       </main>
+      <app-footer />
     </div>
   `,
 })

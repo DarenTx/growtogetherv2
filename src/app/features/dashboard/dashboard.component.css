@@ -7,3 +7,14 @@
   padding: 1.25rem 1rem 3rem;
   animation: fade-in 0.2s ease-out;
 }
+
+.gt-scorecard-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.gt-scorecard-row > * {
+  flex: 1;
+  min-width: 0;
+}

@@ -98,7 +98,7 @@ export class EnterHistoricalDataComponent implements OnInit {
     try {
       await this.growthDataService.saveGrowthData({
         email_key,
-        user_id: null,
+        user_id: profile_id || null,
         year,
         month,
         bank_name,
