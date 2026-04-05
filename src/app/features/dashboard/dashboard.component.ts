@@ -13,7 +13,7 @@ import { AdminService } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrowthDataService } from '../../core/services/growth-data.service';
 import { ProfileService } from '../../core/services/profile.service';
-import { ClassicScorecardComponent } from '../../shared/components/classic-scorecard/classic-scorecard.component';
+import { ClassicScorecardComponent } from './components/classic-scorecard/classic-scorecard.component';
 import { GrowthGridComponent } from './components/growth-grid/growth-grid.component';
 
 const CURRENT_YEAR = new Date().getFullYear();

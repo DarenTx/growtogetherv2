@@ -20,11 +20,14 @@
 
     @if (profile()?.id) {
       <div class="gt-scorecard-row">
-        <app-classic-scorecard [year]="currentYear" [month]="currentMonth" [uuid]="profile()!.id" />
         <app-classic-scorecard [year]="prevMonthYear" [month]="prevMonth" [uuid]="profile()!.id" />
       </div>
     }
 
-    <app-growth-grid [rows]="rows()" [selectedYear]="selectedYear()" (yearChange)="onYearChange($event)" />
+    <app-growth-grid
+      [rows]="rows()"
+      [selectedYear]="selectedYear()"
+      (yearChange)="onYearChange($event)"
+    />
   }
 </div>

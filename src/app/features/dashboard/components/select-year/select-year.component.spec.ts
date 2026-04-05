@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { GrowthDataService } from '../../../core/services/growth-data.service';
-import { createMockGrowthDataService } from '../../../core/testing/mock-supabase.service';
+import { GrowthDataService } from '../../../../core/services/growth-data.service';
+import { createMockGrowthDataService } from '../../../../core/testing/mock-supabase.service';
 import { SelectYearComponent } from './select-year.component';
 
 describe('SelectYearComponent', () => {

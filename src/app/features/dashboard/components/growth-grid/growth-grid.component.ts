@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { SelectYearComponent } from '../../../../shared/components/select-year/select-year.component';
+import { SelectYearComponent } from '../select-year/select-year.component';
 import { TrendLabelComponent } from '../../../../shared/components/trend-label/trend-label.component';
 import { DashboardRow } from '../../dashboard.component';
 
@@ -60,7 +60,8 @@ export class GrowthGridComponent {
         const va = a.months[idx];
         const vb = b.months[idx];
         if (va === null && vb === null) cmp = 0;
-        else if (va === null) cmp = 1; // nulls last
+        else if (va === null)
+          cmp = 1; // nulls last
         else if (vb === null) cmp = -1;
         else cmp = va - vb;
       }
