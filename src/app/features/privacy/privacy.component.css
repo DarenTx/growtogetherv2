@@ -1,0 +1,79 @@
+:host {
+  display: block;
+}
+
+.policy-shell {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 1rem 2.5rem;
+}
+
+.policy-card {
+  width: min(100%, 900px);
+  background: #ffffff;
+  border: 1px solid #d7deea;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  color: #10203a;
+}
+
+.eyebrow {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #1b5eb7;
+}
+
+h1 {
+  margin: 0.35rem 0 0.25rem;
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  line-height: 1.2;
+}
+
+.meta {
+  margin-top: 0;
+  color: #455b7a;
+}
+
+h2 {
+  margin-top: 1.4rem;
+  font-size: 1.1rem;
+  color: #173f7a;
+}
+
+p,
+li {
+  line-height: 1.65;
+}
+
+ul {
+  padding-left: 1.2rem;
+  margin: 0.4rem 0 0;
+}
+
+a {
+  color: #0f5ecc;
+}
+
+a:focus-visible {
+  outline: 2px solid #0f5ecc;
+  outline-offset: 2px;
+  border-radius: 0.2rem;
+}
+
+.actions {
+  margin-top: 1.5rem;
+  font-weight: 600;
+}
+
+@media (width >= 48rem) {
+  .policy-shell {
+    padding-top: 2.25rem;
+  }
+
+  .policy-card {
+    padding: 2rem 2.2rem;
+  }
+}

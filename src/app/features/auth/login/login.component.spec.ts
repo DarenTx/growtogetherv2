@@ -31,7 +31,24 @@ describe('LoginComponent', () => {
     expect(h1.textContent).toContain('Sign in');
   });
 
+  it('shows fallback when Google client id is missing', async () => {
+    await Promise.resolve();
+    expect(component.showMagicLinkFallback()).toBe(true);
+    expect(component.state()).toBe('error');
+  });
+
+  it('shows terms and privacy links on the login form', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const termsLink = compiled.querySelector('a[routerLink="/tos"]') as HTMLAnchorElement;
+    const privacyLink = compiled.querySelector('a[routerLink="/privacy"]') as HTMLAnchorElement;
+
+    expect(termsLink).toBeTruthy();
+    expect(privacyLink).toBeTruthy();
+  });
+
   it('shows required error when form submitted empty', async () => {
+    component.useMagicLinkFallback();
+    fixture.detectChanges();
     const button = fixture.nativeElement.querySelector(
       'button[type="submit"]',
     ) as HTMLButtonElement;
@@ -68,6 +85,7 @@ describe('LoginComponent', () => {
 
   describe('successful submission with email', () => {
     beforeEach(async () => {
+      component.useMagicLinkFallback();
       mockService['signInWithEmail'] = vi.fn().mockResolvedValue(undefined);
       component.identifierControl.setValue('user@example.com');
       await component.onSubmit();
@@ -90,6 +108,7 @@ describe('LoginComponent', () => {
 
   describe('successful submission with phone', () => {
     beforeEach(async () => {
+      component.useMagicLinkFallback();
       mockService['signInWithPhone'] = vi.fn().mockResolvedValue(undefined);
       component.identifierControl.setValue('2125551234');
       await component.onSubmit();
@@ -107,6 +126,7 @@ describe('LoginComponent', () => {
 
   describe('submission with invalid phone', () => {
     beforeEach(async () => {
+      component.useMagicLinkFallback();
       component.identifierControl.setValue('notaphone');
       await component.onSubmit();
       fixture.detectChanges();
@@ -124,6 +144,7 @@ describe('LoginComponent', () => {
 
   describe('on sign-in error', () => {
     beforeEach(async () => {
+      component.useMagicLinkFallback();
       mockService['signInWithEmail'] = vi.fn().mockRejectedValue(new Error('Rate limit reached'));
       component.identifierControl.setValue('user@example.com');
       await component.onSubmit();
@@ -144,5 +165,10 @@ describe('LoginComponent', () => {
     component.tryAgain();
     expect(component.state()).toBe('idle');
     expect(component.form.value.identifier).toBeFalsy();
+  });
+
+  it('keeps fallback visible when manually requested', () => {
+    component.useMagicLinkFallback();
+    expect(component.showMagicLinkFallback()).toBe(true);
   });
 });

@@ -24,3 +24,95 @@
   line-height: 1;
   margin-bottom: 0.5rem;
 }
+
+.gt-google-actions {
+  margin-top: 0.4rem;
+}
+
+.gt-form {
+  margin-top: 0.65rem;
+}
+
+.gt-or-divider {
+  position: relative;
+  margin: 1rem 0 0.4rem;
+  text-align: center;
+  font-weight: 700;
+  color: #455b7a;
+  letter-spacing: 0.08em;
+  font-size: 0.83rem;
+}
+
+.gt-or-divider::before,
+.gt-or-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 42%;
+  border-top: 1px solid #c9d4e8;
+}
+
+.gt-or-divider::before {
+  left: 0;
+}
+
+.gt-or-divider::after {
+  right: 0;
+}
+
+.gt-or-divider span {
+  background: #fff;
+  padding: 0 0.5rem;
+}
+
+.gt-google-brand-btn {
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid #c7d0df;
+  border-radius: 0.45rem;
+  background: #fff;
+  color: #1e2738;
+  font-weight: 600;
+  font-size: 1.03rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.gt-google-brand-btn:hover:not(:disabled) {
+  background: #f8fbff;
+  border-color: #aebcd5;
+}
+
+.gt-google-brand-btn:focus-visible {
+  outline: 2px solid #0f5ecc;
+  outline-offset: 2px;
+}
+
+.gt-google-brand-btn:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.gt-google-brand-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  display: block;
+  flex: 0 0 1.125rem;
+}
+
+.gt-legal-links {
+  margin-top: 0.9rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #4b5f7c;
+}
+
+.gt-legal-links a {
+  color: #0f5ecc;
+  text-decoration: underline;
+}

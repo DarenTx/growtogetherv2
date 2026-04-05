@@ -37,6 +37,8 @@ export const MOCK_PROFILE_ADMIN = {
 export function createMockAuthService(): Record<string, any> {
   return {
     getSession: vi.fn().mockResolvedValue(MOCK_SESSION),
+    signInWithGooglePopup: vi.fn().mockResolvedValue(undefined),
+    signInWithGoogleIdToken: vi.fn().mockResolvedValue(undefined),
     signInWithEmail: vi.fn().mockResolvedValue(undefined),
     signInWithPhone: vi.fn().mockResolvedValue(undefined),
     signOut: vi.fn().mockResolvedValue(undefined),

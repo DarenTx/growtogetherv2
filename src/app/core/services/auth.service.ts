@@ -39,6 +39,76 @@ export class AuthService {
     this.logger.info('Magic link sent successfully');
   }
 
+  async signInWithGooglePopup(): Promise<void> {
+    this.logger.info('Starting Google OAuth popup sign-in');
+    const { data, error } = await this.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: this.authCallbackUrl,
+        skipBrowserRedirect: true,
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+
+    if (error) {
+      this.logger.error('signInWithGooglePopup failed to create OAuth URL', error);
+      throw error;
+    }
+
+    const oauthUrl = data?.url;
+    if (!oauthUrl) {
+      const urlError = new Error('Google sign-in URL was not returned by Supabase.');
+      this.logger.error('signInWithGooglePopup missing OAuth URL', urlError);
+      throw urlError;
+    }
+
+    const popup = window.open(
+      oauthUrl,
+      'grow-together-google-login',
+      'popup=yes,width=520,height=680,left=100,top=100',
+    );
+
+    if (!popup) {
+      const popupError = new Error('Google sign-in popup was blocked by your browser.');
+      this.logger.warn('signInWithGooglePopup popup blocked');
+      throw popupError;
+    }
+
+    popup.focus();
+    this.logger.info('Google OAuth popup opened successfully');
+  }
+
+  async signInWithGoogleIdToken(idToken: string): Promise<void> {
+    this.logger.info('Signing in with Google ID token');
+    const { error } = await this.client.auth.signInWithIdToken({
+      provider: 'google',
+      token: idToken,
+    });
+
+    if (error) {
+      this.logger.error('signInWithGoogleIdToken failed', error);
+      throw error;
+    }
+
+    this.logger.info('Google ID token sign-in successful');
+  }
+
+  async signInWithGoogleRedirect(): Promise<void> {
+    this.logger.info('Starting Google OAuth redirect sign-in');
+    const { error } = await this.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: this.authCallbackUrl,
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+
+    if (error) {
+      this.logger.error('signInWithGoogleRedirect failed', error);
+      throw error;
+    }
+  }
+
   async signInWithPhone(phone: string): Promise<void> {
     this.logger.info('Sending OTP to phone', phone);
     const { error } = await this.client.auth.signInWithOtp({ phone });

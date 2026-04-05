@@ -16,6 +16,10 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
 
   private authSubscription: Subscription | null = null;
 
+  private get isPopupContext(): boolean {
+    return window.opener !== null && window.opener !== window;
+  }
+
   constructor(
     private readonly auth: AuthService,
     private readonly profileService: ProfileService,
@@ -65,6 +69,13 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
   private async handleSignedIn(): Promise<void> {
     try {
       const profile = await this.profileService.getProfile();
+      const destination = !profile || !profile.registration_complete ? '/register' : '/dashboard';
+
+      if (this.isPopupContext) {
+        this.notifyPopupResult('success', destination);
+        return;
+      }
+
       if (!profile || !profile.registration_complete) {
         await this.router.navigate(['/register']);
       } else {
@@ -76,6 +87,11 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
   }
 
   private handleError(message: string): void {
+    if (this.isPopupContext) {
+      this.notifyPopupResult('error', '/login', message);
+      return;
+    }
+
     // Check if the error is an expired link (Supabase sets specific URL params)
     const url = window.location.href;
     if (
@@ -88,6 +104,25 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
     }
     this.errorMessage.set(message);
     this.status.set('error');
+  }
+
+  private notifyPopupResult(
+    status: 'success' | 'error',
+    redirectTo: '/dashboard' | '/register' | '/login',
+    message?: string,
+  ): void {
+    const payload = {
+      type: 'gt-auth-popup-result',
+      status,
+      redirectTo,
+      message,
+    };
+
+    if (window.opener) {
+      window.opener.postMessage(payload, window.location.origin);
+    }
+
+    window.close();
   }
 
   goToLogin(): void {
