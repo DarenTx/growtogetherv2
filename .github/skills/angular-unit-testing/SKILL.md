@@ -16,30 +16,29 @@ This project uses `@angular/build:unit-test` (Angular's native Vitest integratio
 - `npx vitest run` — fails with "Vitest failed to find the runner"
 - `vitest` directly — same failure
 - The `runTests` tool — does not use the Angular CLI pipeline
+- `run_in_terminal` with `ng test` — **fails on Windows** due to PowerShell execution policy (`UnauthorizedAccess` / `PSSecurityException`). Do not attempt workarounds like `Set-Location` prefixes; they fail the same way.
 
-**ALWAYS** run tests by opening a terminal to the workspace root and using:
+**ALWAYS** run tests using the VS Code task runner:
 
 ```
-ng test --no-watch
+run_task  { "id": "npm: 1", "workspaceFolder": "c:\\Dev\\Git\\grow-together-v2" }
 ```
+
+This maps to the `npm: test` task (defined in `.vscode/tasks.json` or workspace config) which runs `ng test` through the Angular CLI without PowerShell execution policy restrictions.
+
+To read the output after launching the task, use `run_task` (which streams output directly) — the result is written to a temp file whose path is returned; use `read_file` on that path.
 
 ### Run a specific test file
 
-```
-ng test --no-watch --include=src/app/path/to/file.spec.ts
-```
+The task runner does not accept extra CLI flags. To target one file, use the task and filter results from the output, or temporarily edit `angular.json`'s `include` glob. Do not try to pass `--include` via `run_in_terminal`.
 
 ### Run tests in watch mode (for development)
 
-```
-ng test
-```
+Use the `npm: test` task (id `npm: 1`) — it defaults to watch mode.
 
 ### Run all tests once (CI / validation)
 
-```
-ng test --no-watch
-```
+Use the `npm: test` task. Inspect the written output file with `read_file` to see pass/fail counts and error details.
 
 ## Test File Conventions
 
@@ -100,14 +99,10 @@ fixture.detectChanges(); // reflects updated state
 
 ## Validation Workflow
 
-After making code changes, validate by running:
+After making code changes, validate by running the `npm: test` task via `run_task`:
 
 ```
-ng test --no-watch
+run_task  { "id": "npm: 1", "workspaceFolder": "c:\\Dev\\Git\\grow-together-v2" }
 ```
 
-If only the changed component needs validation:
-
-```
-ng test --no-watch --include=src/app/path/to/changed.component.spec.ts
-```
+Then read the returned output file path with `read_file` to check pass/fail counts and error details.

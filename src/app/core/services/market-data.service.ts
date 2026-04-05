@@ -42,6 +42,22 @@ export class MarketDataService {
     this.logger.debug('Market index saved successfully');
   }
 
+  async getMarketIndexesForYear(year: number): Promise<MarketIndex[]> {
+    this.logger.debug('Fetching market indexes for year', year);
+    const { data, error } = await this.client
+      .from('market_indexes')
+      .select('*')
+      .eq('year', year)
+      .order('month', { ascending: true });
+
+    if (error) {
+      this.logger.error('getMarketIndexesForYear failed', error);
+      throw error;
+    }
+    this.logger.debug(`Fetched ${(data ?? []).length} market index records for year`);
+    return (data ?? []) as MarketIndex[];
+  }
+
   async getMarketIndexesForMonth(year: number, month: number): Promise<MarketIndex[]> {
     this.logger.debug('Fetching market indexes for month', year, month);
     const { data, error } = await this.client

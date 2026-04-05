@@ -479,11 +479,15 @@
   /* ── Dashboard table ────────────────────────────────────────── */
   .gt-table-wrap {
     width: 100%;
-    overflow-x: auto;
     border-radius: 0.75rem;
     border: 1px solid var(--color-border);
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
     background-color: var(--color-surface-raised);
+    overflow: hidden;
+  }
+
+  .gt-table-scroll {
+    overflow-x: auto;
   }
 
   .gt-table {
@@ -491,11 +495,6 @@
     min-width: 860px;
     width: 100%;
     font-size: 0.875rem;
-  }
-
-  /* Keep header background consistent with scrollable table width */
-  .gt-grid-header {
-    min-width: 860px;
   }
 
   .gt-table th,

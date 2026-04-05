@@ -7,8 +7,10 @@ import {
   effect,
   inject,
   input,
+  output,
   runInInjectionContext,
   signal,
+  untracked,
 } from '@angular/core';
 import { GrowthData } from '../../../../core/models/growth-data.interface';
 import { MarketIndex } from '../../../../core/models/market-index.interface';
@@ -42,6 +44,9 @@ export class ClassicScorecardComponent implements OnInit {
   readonly year = input.required<number>();
   readonly month = input.required<number>();
   readonly uuid = input.required<string>();
+
+  // ── Outputs ────────────────────────────────────────────────────────────────
+  readonly yearChange = output<number>();
 
   // ── Writable signals ───────────────────────────────────────────────────────
   readonly isLoading = signal(true);
@@ -241,12 +246,20 @@ export class ClassicScorecardComponent implements OnInit {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   goToPrevMonth(): void {
+    const prevYear = this.displayYear();
     this.offsetMonths.update((v) => v - 1);
+    if (this.displayYear() !== prevYear) {
+      this.yearChange.emit(this.displayYear());
+    }
   }
 
   goToNextMonth(): void {
     if (this.canGoNext()) {
+      const prevYear = this.displayYear();
       this.offsetMonths.update((v) => v + 1);
+      if (this.displayYear() !== prevYear) {
+        this.yearChange.emit(this.displayYear());
+      }
     }
   }
 
@@ -254,6 +267,13 @@ export class ClassicScorecardComponent implements OnInit {
 
   ngOnInit(): void {
     runInInjectionContext(this.injector, () => {
+      // Reset navigation offset when parent changes the base year/month
+      effect(() => {
+        this.year();
+        this.month();
+        untracked(() => this.offsetMonths.set(0));
+      });
+
       effect(() => {
         const y = this.displayYear();
         const m = this.displayMonth();

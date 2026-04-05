@@ -6,14 +6,17 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { GrowthData } from '../../core/models/growth-data.interface';
 import { Profile } from '../../core/models/profile.interface';
 import { AdminService } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrowthDataService } from '../../core/services/growth-data.service';
+import { MarketDataService } from '../../core/services/market-data.service';
+import { MarketIndex } from '../../core/models/market-index.interface';
 import { ProfileService } from '../../core/services/profile.service';
 import { ClassicScorecardComponent } from './components/classic-scorecard/classic-scorecard.component';
+import { DashboardHeader } from './components/dashboard-header/dashboard-header';
 import { GrowthGridComponent } from './components/growth-grid/growth-grid.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -32,7 +35,7 @@ export interface DashboardRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ClassicScorecardComponent, GrowthGridComponent],
+  imports: [DashboardHeader, ClassicScorecardComponent, GrowthGridComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -41,22 +44,35 @@ export class DashboardComponent implements OnInit {
   private readonly profileService = inject(ProfileService);
   private readonly adminService = inject(AdminService);
   private readonly growthDataService = inject(GrowthDataService);
+  private readonly marketDataService = inject(MarketDataService);
   private readonly router = inject(Router);
 
   readonly selectedYear = signal<number>(CURRENT_YEAR);
   readonly currentYear = CURRENT_YEAR;
   readonly currentMonth = CURRENT_MONTH;
-  readonly prevMonth = PREV_MONTH;
-  readonly prevMonthYear = PREV_MONTH_YEAR;
+  readonly scorecardYear = signal<number>(PREV_MONTH_YEAR);
+  readonly scorecardMonth = signal<number>(PREV_MONTH);
 
   readonly profile = signal<Profile | null>(null);
   readonly isAdmin = computed(() => this.profile()?.is_admin ?? false);
 
   private readonly allProfiles = signal<Profile[]>([]);
   private readonly growthData = signal<GrowthData[]>([]);
+  private readonly marketData = signal<MarketIndex[]>([]);
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+
+  private marketMonths(indexName: string): (number | null)[] {
+    const data = this.marketData();
+    return Array.from({ length: 12 }, (_, i) => {
+      const entry = data.find((m) => m.index_name === indexName && m.month === i + 1);
+      return entry?.growth_pct ?? null;
+    });
+  }
+
+  readonly dowMonths = computed<(number | null)[]>(() => this.marketMonths('Dow'));
+  readonly sp500Months = computed<(number | null)[]>(() => this.marketMonths('S&P 500'));
 
   readonly rows = computed<DashboardRow[]>(() => {
     const profiles = this.allProfiles();
@@ -87,14 +103,16 @@ export class DashboardComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
     try {
-      const [ownProfile, profiles, growthData] = await Promise.all([
+      const [ownProfile, profiles, growthData, marketData] = await Promise.all([
         this.profileService.getProfile(),
         this.adminService.getAllProfiles(),
         this.growthDataService.getGrowthDataForYear(this.selectedYear()),
+        this.marketDataService.getMarketIndexesForYear(this.selectedYear()),
       ]);
       this.profile.set(ownProfile);
       this.allProfiles.set(profiles);
       this.growthData.set(growthData);
+      this.marketData.set(marketData);
     } catch (err: unknown) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Failed to load dashboard data.');
     } finally {
@@ -104,15 +122,37 @@ export class DashboardComponent implements OnInit {
 
   async onYearChange(year: number): Promise<void> {
     this.selectedYear.set(year);
+    this.scorecardYear.set(year);
+    this.scorecardMonth.set(12);
     this.loading.set(true);
     this.errorMessage.set(null);
     try {
-      const growthData = await this.growthDataService.getGrowthDataForYear(year);
+      const [growthData, marketData] = await Promise.all([
+        this.growthDataService.getGrowthDataForYear(year),
+        this.marketDataService.getMarketIndexesForYear(year),
+      ]);
       this.growthData.set(growthData);
+      this.marketData.set(marketData);
     } catch (err: unknown) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Failed to load growth data.');
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async onScorecardYearChange(year: number): Promise<void> {
+    this.selectedYear.set(year);
+    // Do NOT set loading here — that would destroy and recreate the scorecard,
+    // losing the user's navigation position.
+    try {
+      const [growthData, marketData] = await Promise.all([
+        this.growthDataService.getGrowthDataForYear(year),
+        this.marketDataService.getMarketIndexesForYear(year),
+      ]);
+      this.growthData.set(growthData);
+      this.marketData.set(marketData);
+    } catch (err: unknown) {
+      this.errorMessage.set(err instanceof Error ? err.message : 'Failed to load growth data.');
     }
   }
 

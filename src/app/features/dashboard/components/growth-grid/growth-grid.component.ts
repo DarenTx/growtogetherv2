@@ -31,6 +31,8 @@ type SortDirection = 'asc' | 'desc';
 export class GrowthGridComponent {
   readonly rows = input.required<DashboardRow[]>();
   readonly selectedYear = input.required<number>();
+  readonly dowMonths = input<(number | null)[]>([]);
+  readonly sp500Months = input<(number | null)[]>([]);
 
   readonly yearChange = output<number>();
 
@@ -38,6 +40,36 @@ export class GrowthGridComponent {
 
   readonly sortColumn = signal<SortColumn>('name');
   readonly sortDirection = signal<SortDirection>('asc');
+
+  readonly monthAverages = computed<(number | null)[]>(() => {
+    const rows = this.rows();
+    return this.months.map((_, i) => {
+      const vals = rows.map((r) => r.months[i]).filter((v): v is number => v !== null);
+      if (vals.length === 0) return null;
+      return vals.reduce((sum, v) => sum + v, 0) / vals.length;
+    });
+  });
+
+  readonly monthBest = computed<(number | null)[]>(() => {
+    const rows = this.rows();
+    return this.months.map((_, i) => {
+      const vals = rows.map((r) => r.months[i]).filter((v): v is number => v !== null);
+      if (vals.length === 0) return null;
+      return Math.max(...vals);
+    });
+  });
+
+  isBest(val: number | null, monthIndex: number): boolean {
+    if (val === null) return false;
+    return val === this.monthBest()[monthIndex];
+  }
+
+  isAboveAvg(val: number | null, monthIndex: number): boolean {
+    if (val === null) return false;
+    const avg = this.monthAverages()[monthIndex];
+    if (avg === null) return false;
+    return val > avg && val !== this.monthBest()[monthIndex];
+  }
 
   readonly sortedRows = computed<DashboardRow[]>(() => {
     const rows = [...this.rows()];
@@ -95,8 +127,7 @@ export class GrowthGridComponent {
 
   formatPct(value: number | null): string {
     if (value === null) return '';
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(2)}%`;
+    return `${value.toFixed(2)}%`;
   }
 
   onYearChange(year: number): void {

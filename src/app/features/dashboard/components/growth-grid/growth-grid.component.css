@@ -49,3 +49,60 @@ th.col-month {
   color: var(--color-primary);
   margin: 0;
 }
+
+tfoot tr.row-averages td {
+  font-weight: 700;
+  border-top: 2px solid var(--color-border);
+  background-color: var(--color-surface, transparent);
+}
+
+tfoot tr.row-market td {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+/* Cell highlights — applied to tbody player rows only */
+td.col-month.above-avg {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+td.col-month.is-best {
+  color: var(--color-gold-500);
+  font-weight: 700;
+}
+
+/* Legend */
+.gt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem 1.5rem;
+  padding: 0.375rem 1rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gt-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.gt-legend-swatch {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.gt-legend-swatch.is-best {
+  color: var(--color-gold-500);
+  background-color: color-mix(in oklch, var(--color-gold-500) 12%, transparent);
+}
+
+.gt-legend-swatch.above-avg {
+  color: var(--color-success);
+  background-color: color-mix(in oklch, var(--color-success) 12%, transparent);
+}

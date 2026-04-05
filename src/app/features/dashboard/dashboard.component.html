@@ -5,28 +5,28 @@
   } @else if (errorMessage()) {
     <p class="gt-error-page">{{ errorMessage() }}</p>
   } @else {
-    <div class="gt-dash-header">
-      <h1 class="gt-page-title">Welcome, {{ profile()?.first_name }}</h1>
-      <nav class="gt-dash-nav" aria-label="Dashboard navigation">
-        @if (isAdmin()) {
-          <a routerLink="/admin/profiles" class="gt-nav-link">Profiles</a>
-          <a routerLink="/admin/market-data" class="gt-nav-link">Market Data</a>
-          <a routerLink="/admin/historical-data" class="gt-nav-link">Historical Data</a>
-          <a routerLink="/audit-log" class="gt-nav-link">Activity Log</a>
-        }
-        <button type="button" class="gt-sign-out" (click)="signOut()">Sign Out</button>
-      </nav>
-    </div>
+    <app-dashboard-header
+      [firstName]="profile()?.first_name"
+      [isAdmin]="isAdmin()"
+      (signOut)="signOut()"
+    />
 
     @if (profile()?.id) {
       <div class="gt-scorecard-row">
-        <app-classic-scorecard [year]="prevMonthYear" [month]="prevMonth" [uuid]="profile()!.id" />
+        <app-classic-scorecard
+          [year]="scorecardYear()"
+          [month]="scorecardMonth()"
+          [uuid]="profile()!.id"
+          (yearChange)="onScorecardYearChange($event)"
+        />
       </div>
     }
 
     <app-growth-grid
       [rows]="rows()"
       [selectedYear]="selectedYear()"
+      [dowMonths]="dowMonths()"
+      [sp500Months]="sp500Months()"
       (yearChange)="onYearChange($event)"
     />
   }

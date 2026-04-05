@@ -22,7 +22,7 @@
   <!-- Trend icon – always in DOM; hidden when showIcon is false or trend is flat -->
   <span
     class="inline-flex shrink-0 w-4 h-4"
-    [style.visibility]="iconHidden() ? 'collapse' : 'visible'"
+    [style.display]="iconHidden() ? 'none' : 'inline-flex'"
   >
     @if (trend() === 'up') {
       <svg
@@ -56,7 +56,7 @@
   <!-- Delta text – always in DOM; hidden when showText is false -->
   <span
     class="text-xs font-medium whitespace-nowrap shrink-0"
-    [style.visibility]="showText() ? 'visible' : 'collapse'"
+    [style.display]="showText() ? '' : 'none'"
     [ngClass]="{
       'text-green-600': trend() === 'up',
       'text-red-600': trend() === 'down',
