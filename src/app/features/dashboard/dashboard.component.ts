@@ -18,6 +18,7 @@ import { ProfileService } from '../../core/services/profile.service';
 import { ClassicScorecardComponent } from './components/classic-scorecard/classic-scorecard.component';
 import { DashboardHeader } from './components/dashboard-header/dashboard-header';
 import { GrowthGridComponent } from './components/growth-grid/growth-grid.component';
+import { MonthlyGrowthEntryComponent } from './monthly-growth-entry/monthly-growth-entry.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
@@ -35,7 +36,12 @@ export interface DashboardRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DashboardHeader, ClassicScorecardComponent, GrowthGridComponent],
+  imports: [
+    DashboardHeader,
+    ClassicScorecardComponent,
+    GrowthGridComponent,
+    MonthlyGrowthEntryComponent,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -52,6 +58,7 @@ export class DashboardComponent implements OnInit {
   readonly currentMonth = CURRENT_MONTH;
   readonly scorecardYear = signal<number>(PREV_MONTH_YEAR);
   readonly scorecardMonth = signal<number>(PREV_MONTH);
+  readonly scorecardRefreshKey = signal(0);
 
   readonly profile = signal<Profile | null>(null);
   readonly isAdmin = computed(() => this.profile()?.is_admin ?? false);
@@ -62,6 +69,24 @@ export class DashboardComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+
+  // Only populated when PREV_MONTH_YEAR !== CURRENT_YEAR (i.e. in January)
+  private readonly prevYearGrowthData = signal<GrowthData[]>([]);
+
+  readonly hasPrevMonthData = computed(() => {
+    const profile = this.profile();
+    if (!profile?.email) return false;
+    const emailKey = profile.email.toLowerCase();
+    const source = PREV_MONTH_YEAR === CURRENT_YEAR ? this.growthData() : this.prevYearGrowthData();
+    return source.some(
+      (d) =>
+        d.email_key.toLowerCase() === emailKey &&
+        d.year === PREV_MONTH_YEAR &&
+        d.month === PREV_MONTH,
+    );
+  });
+
+  readonly showGrowthEntry = computed(() => !this.hasPrevMonthData());
 
   private marketMonths(indexName: string): (number | null)[] {
     const data = this.marketData();
@@ -113,6 +138,10 @@ export class DashboardComponent implements OnInit {
       this.allProfiles.set(profiles);
       this.growthData.set(growthData);
       this.marketData.set(marketData);
+      if (PREV_MONTH_YEAR !== CURRENT_YEAR) {
+        const prevYearData = await this.growthDataService.getGrowthDataForYear(PREV_MONTH_YEAR);
+        this.prevYearGrowthData.set(prevYearData);
+      }
     } catch (err: unknown) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Failed to load dashboard data.');
     } finally {
@@ -153,6 +182,27 @@ export class DashboardComponent implements OnInit {
       this.marketData.set(marketData);
     } catch (err: unknown) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Failed to load growth data.');
+    }
+  }
+
+  async onGrowthEntrySaved(): Promise<void> {
+    try {
+      const year = this.selectedYear();
+      const [growthData, marketData] = await Promise.all([
+        this.growthDataService.getGrowthDataForYear(year),
+        this.marketDataService.getMarketIndexesForYear(year),
+      ]);
+      this.growthData.set(growthData);
+      this.marketData.set(marketData);
+      if (PREV_MONTH_YEAR !== CURRENT_YEAR) {
+        const prevYearData = await this.growthDataService.getGrowthDataForYear(PREV_MONTH_YEAR);
+        this.prevYearGrowthData.set(prevYearData);
+      }
+      this.scorecardRefreshKey.update((k) => k + 1);
+    } catch (err: unknown) {
+      this.errorMessage.set(
+        err instanceof Error ? err.message : 'Failed to refresh dashboard data.',
+      );
     }
   }
 

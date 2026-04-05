@@ -44,6 +44,8 @@ export class ClassicScorecardComponent implements OnInit {
   readonly year = input.required<number>();
   readonly month = input.required<number>();
   readonly uuid = input.required<string>();
+  /** Increment to force a data reload without resetting navigation. */
+  readonly refreshTrigger = input(0);
 
   // ── Outputs ────────────────────────────────────────────────────────────────
   readonly yearChange = output<number>();
@@ -61,6 +63,8 @@ export class ClassicScorecardComponent implements OnInit {
 
   // ── In-flight guard ────────────────────────────────────────────────────────
   private _loadInProgress = false;
+  // True until the first successful data load; enables auto-navigation to last month with data.
+  private _initialLoad = true;
 
   // ── Display year/month (base inputs + navigation offset) ──────────────────
   readonly displayYear = computed((): number => {
@@ -285,13 +289,17 @@ export class ClassicScorecardComponent implements OnInit {
       effect(() => {
         this.year();
         this.month();
-        untracked(() => this.offsetMonths.set(0));
+        untracked(() => {
+          this.offsetMonths.set(0);
+          this._initialLoad = true;
+        });
       });
 
       effect(() => {
         const y = this.displayYear();
         const m = this.displayMonth();
         const id = this.uuid();
+        this.refreshTrigger(); // subscribe so a bump forces a reload
         if (y && m && id) {
           this.loadData();
         }
@@ -313,10 +321,48 @@ export class ClassicScorecardComponent implements OnInit {
         this.loadError.set('Not authenticated');
         return;
       }
-      const [userYearData, allMonthData, marketData, profiles] = await Promise.all([
-        this.growthDataService.getGrowthDataForUserYear(this.uuid(), this.displayYear()),
-        this.growthDataService.getGrowthDataForYearMonth(this.displayYear(), this.displayMonth()),
-        this.marketDataService.getMarketIndexesForMonth(this.displayYear(), this.displayMonth()),
+
+      // Fetch the user's year data first so we can check whether auto-navigation is needed.
+      const userYearData = await this.growthDataService.getGrowthDataForUserYear(
+        this.uuid(),
+        loadedYear,
+      );
+      const hasDataForMonth = userYearData.some((d) => d.month === loadedMonth);
+
+      if (!hasDataForMonth && this._initialLoad) {
+        // Find the most recent month with data in the same year (before the target month).
+        const sameYearMonths = [...new Set(userYearData.map((d) => d.month))].filter(
+          (m) => m < loadedMonth,
+        );
+        if (sameYearMonths.length > 0) {
+          const targetMonth = Math.max(...sameYearMonths);
+          const base = this.year() * 12 + (this.month() - 1);
+          this.offsetMonths.set(loadedYear * 12 + (targetMonth - 1) - base);
+          return; // finally + effect will trigger loadData for the new month
+        }
+
+        // No earlier data in the same year — try one year back.
+        if (loadedYear > 2000) {
+          const prevYearData = await this.growthDataService.getGrowthDataForUserYear(
+            this.uuid(),
+            loadedYear - 1,
+          );
+          const prevYearMonths = [...new Set(prevYearData.map((d) => d.month))];
+          if (prevYearMonths.length > 0) {
+            const targetMonth = Math.max(...prevYearMonths);
+            const base = this.year() * 12 + (this.month() - 1);
+            this.offsetMonths.set((loadedYear - 1) * 12 + (targetMonth - 1) - base);
+            return; // finally + effect will trigger loadData for the new month
+          }
+        }
+        // No data found anywhere — fall through and display the empty state.
+      }
+
+      this._initialLoad = false;
+
+      const [allMonthData, marketData, profiles] = await Promise.all([
+        this.growthDataService.getGrowthDataForYearMonth(loadedYear, loadedMonth),
+        this.marketDataService.getMarketIndexesForMonth(loadedYear, loadedMonth),
         this.profileService.getRegisteredProfiles(),
       ]);
 
@@ -329,7 +375,7 @@ export class ClassicScorecardComponent implements OnInit {
     } finally {
       this._loadInProgress = false;
       this.isLoading.set(false);
-      // If the user navigated while loading was in progress, trigger a fresh load
+      // If the user navigated while loading was in progress, trigger a fresh load.
       if (this.displayYear() !== loadedYear || this.displayMonth() !== loadedMonth) {
         this.loadData();
       }

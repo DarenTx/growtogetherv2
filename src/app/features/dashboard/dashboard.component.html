@@ -13,10 +13,14 @@
 
     @if (profile()?.id) {
       <div class="gt-scorecard-row">
+        @if (showGrowthEntry()) {
+          <app-monthly-growth-entry (saved)="onGrowthEntrySaved()" />
+        }
         <app-classic-scorecard
           [year]="scorecardYear()"
           [month]="scorecardMonth()"
           [uuid]="profile()!.id"
+          [refreshTrigger]="scorecardRefreshKey()"
           (yearChange)="onScorecardYearChange($event)"
         />
       </div>

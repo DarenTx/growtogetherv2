@@ -23,6 +23,9 @@ describe('MonthlyGrowthEntryComponent', () => {
   beforeEach(async () => {
     mockService = { ...createMockAuthService(), ...createMockGrowthDataService() };
     mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
+    mockService['getOwnBankNames'] = vi
+      .fn()
+      .mockResolvedValue(['Fidelity Investments', 'Edward Jones']);
     mockService['getOwnGrowthDataForMonth'] = vi.fn().mockResolvedValue(null);
     mockService['saveGrowthData'] = vi.fn().mockResolvedValue(undefined);
     mockService['deleteOwnGrowthDataForMonth'] = vi.fn().mockResolvedValue(undefined);
@@ -53,6 +56,33 @@ describe('MonthlyGrowthEntryComponent', () => {
   it('creates the component', async () => {
     await createComponent();
     expect(component).toBeTruthy();
+  });
+
+  // ─── 1b. Populates bankOptions from getOwnBankNames ─────────────────────
+
+  it('populates bankOptions from getOwnBankNames on init', async () => {
+    await createComponent();
+    expect(component.bankOptions()).toEqual(['Fidelity Investments', 'Edward Jones']);
+  });
+
+  it('sets bankControl to first bank name returned by getOwnBankNames', async () => {
+    await createComponent();
+    expect(component.bankControl.value).toBe('Fidelity Investments');
+  });
+
+  it('leaves bankControl empty when getOwnBankNames returns no results', async () => {
+    mockService['getOwnBankNames'] = vi.fn().mockResolvedValue([]);
+    await createComponent();
+    expect(component.bankControl.value).toBe('');
+    expect(component.bankOptions()).toEqual([]);
+  });
+
+  it('continues loading form when getOwnBankNames rejects', async () => {
+    mockService['getOwnBankNames'] = vi.fn().mockRejectedValue(new Error('network error'));
+    await createComponent();
+    // Form should still be functional (loadFailed is for growth data, not bank names)
+    expect(component).toBeTruthy();
+    expect(component.bankOptions()).toEqual([]);
   });
 
   // ─── 2. displayLabel reflects previous month on init (run in March) ─────

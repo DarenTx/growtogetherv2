@@ -1,9 +1,14 @@
 <!-- ── Monthly Growth Entry ───────────────────────────────────── -->
 <div class="gt-page">
-  <h1 class="gt-page-title">{{ displayLabel }}</h1>
-  <p class="gt-section-subtitle">Enter Monthly Growth</p>
-
   <div class="gt-card">
+    <!-- Section label -->
+    <p class="text-center text-xs font-semibold uppercase tracking-widest text-text-secondary mb-1">
+      Enter Monthly Growth
+    </p>
+
+    <!-- Month display -->
+    <p class="text-center text-base font-semibold text-text-base mb-3">{{ displayLabel }}</p>
+
     <form
       class="gt-form"
       novalidate
@@ -14,7 +19,7 @@
       <div class="gt-field">
         <label class="gt-label" for="bank_name">Bank Name</label>
         <select id="bank_name" class="gt-select" [formControl]="bankControl">
-          @for (opt of bankOptions; track opt) {
+          @for (opt of bankOptions(); track opt) {
             <option [value]="opt">{{ opt }}</option>
           }
         </select>
@@ -42,9 +47,6 @@
           [formControl]="growthPctControl"
           [attr.aria-invalid]="errorMessage() !== ''"
         />
-        <p class="gt-field-hint">
-          Enter a positive or negative decimal. Leave blank and save to clear.
-        </p>
       </div>
 
       <!-- ── Banners ───────────────────────────────────────────── -->
