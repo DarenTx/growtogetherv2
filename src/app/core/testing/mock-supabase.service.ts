@@ -61,6 +61,7 @@ export function createMockGrowthDataService(): Record<string, any> {
   return {
     getOwnGrowthData: vi.fn().mockResolvedValue([]),
     getOwnGrowthDataForMonth: vi.fn().mockResolvedValue(null),
+    getOwnBankNames: vi.fn().mockResolvedValue([]),
     deleteOwnGrowthDataForMonth: vi.fn().mockResolvedValue(undefined),
     getAllGrowthData: vi.fn().mockResolvedValue([]),
     getGrowthDataForYear: vi.fn().mockResolvedValue([]),

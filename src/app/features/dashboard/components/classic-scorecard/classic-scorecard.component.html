@@ -1,0 +1,253 @@
+<div class="gt-card" [attr.aria-label]="cardAriaLabel()">
+  <!-- Section label -->
+  <p class="text-center text-xs font-semibold uppercase tracking-widest text-text-secondary mb-1">
+    My Performance
+  </p>
+
+  <!-- Month navigation -->
+  <div class="flex items-center justify-between mb-3">
+    <button
+      type="button"
+      class="p-1.5 rounded text-text-secondary hover:text-text-base hover:bg-surface transition-colors"
+      (click)="goToPrevMonth()"
+      aria-label="Previous month"
+    >
+      <svg
+        class="w-5 h-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+    <span class="text-base font-semibold text-text-base" aria-live="polite">{{
+      navigationLabel()
+    }}</span>
+    @if (canGoNext()) {
+      <button
+        type="button"
+        class="p-1.5 rounded text-text-secondary hover:text-text-base hover:bg-surface transition-colors"
+        (click)="goToNextMonth()"
+        aria-label="Next month"
+      >
+        <svg
+          class="w-5 h-5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    } @else {
+      <span class="w-8"></span>
+    }
+  </div>
+
+  @switch (state()) {
+    @case ('loading') {
+      <p class="text-center text-text-muted">Loading…</p>
+    }
+
+    @case ('error') {
+      <div class="gt-banner gt-banner-error" role="alert">{{ loadError() }}</div>
+    }
+
+    @case ('no-data') {
+      <p class="text-center text-text-muted py-6">No data found for this month.</p>
+    }
+  }
+
+  <!-- Angular @switch does not support fall-through; use @if to share the
+       layout between 'historical' and 'current-data' states. -->
+  @if (state() === 'historical') {
+    <!-- YTD + MoM block: centered as a unit, lines right-aligned within -->
+    <div class="flex justify-center mb-3">
+      <div class="flex flex-col items-end gap-y-0.5">
+        <!-- Large icon + YTD percentage -->
+        <div class="flex items-center gap-x-2">
+          @if (userGrowthPct() !== null) {
+            <svg
+              class="w-12 h-12 shrink-0"
+              role="img"
+              [attr.aria-label]="
+                userGrowthPct()! > 0
+                  ? 'Trending up'
+                  : userGrowthPct()! < 0
+                    ? 'Trending down'
+                    : 'No change'
+              "
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              [class.text-success]="userGrowthPct()! > 0"
+              [class.text-error]="userGrowthPct()! < 0"
+              [class.text-text-muted]="userGrowthPct() === 0"
+            >
+              @if (userGrowthPct()! >= 0) {
+                <path d="M12 4l8 8H4z" />
+              } @else {
+                <path d="M12 20l-8-8h16z" />
+              }
+            </svg>
+          }
+          <span
+            class="text-4xl font-bold"
+            [class.text-success]="userGrowthPct() !== null && userGrowthPct()! > 0"
+            [class.text-error]="userGrowthPct() !== null && userGrowthPct()! < 0"
+            [class.text-text-muted]="userGrowthPct() === null || userGrowthPct() === 0"
+            aria-live="polite"
+            >{{ formattedGrowthPct() }}</span
+          >
+        </div>
+        <!-- YTD growth label -->
+        <span class="text-xs text-text-muted">YTD growth</span>
+
+        <!-- MoM delta -->
+        @if (momDelta() !== null) {
+          <div class="flex items-center gap-x-1 mt-1">
+            <svg
+              class="w-4 h-4 shrink-0"
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              [class.text-success]="momTrend() === 'up'"
+              [class.text-error]="momTrend() === 'down'"
+              [class.text-text-muted]="momTrend() === 'flat'"
+            >
+              @if (momTrend() === 'up') {
+                <path d="M12 4l8 8H4z" />
+              } @else {
+                <path d="M12 20l-8-8h16z" />
+              }
+            </svg>
+            <span
+              class="text-2xl font-bold"
+              [class.text-success]="momTrend() === 'up'"
+              [class.text-error]="momTrend() === 'down'"
+              [class.text-text-muted]="momTrend() === 'flat'"
+              >{{ formattedMomDelta() }}</span
+            >
+          </div>
+        }
+        <!-- vs last month label -->
+        <span class="text-xs text-text-muted">vs last month</span>
+      </div>
+    </div>
+
+    <!-- Sparkline trend-label – its own row, between vs last month and market averages -->
+    <div class="h-8 w-full mb-3 overflow-hidden" aria-label="Month-over-month trend sparkline">
+      <app-trend-label
+        class="block w-full h-full"
+        [data]="ytdDataString()"
+        [showIcon]="false"
+        [showText]="false"
+      />
+    </div>
+
+    <!-- Market comparison row -->
+    <div class="flex flex-wrap justify-between items-center gap-y-1 mb-1 text-sm">
+      <!-- Dow Jones -->
+      @if (dowDiff() !== null) {
+        <div class="flex items-center gap-x-1">
+          <svg
+            class="w-4 h-4 shrink-0"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            [class.text-success]="dowDiff()! > 0"
+            [class.text-error]="dowDiff()! < 0"
+            [class.text-text-muted]="dowDiff() === 0"
+          >
+            @if (dowDiff()! >= 0) {
+              <path d="M12 4l8 8H4z" />
+            } @else {
+              <path d="M12 20l-8-8h16z" />
+            }
+          </svg>
+          <span
+            [class.text-success]="dowDiff()! > 0"
+            [class.text-error]="dowDiff()! < 0"
+            [class.text-text-muted]="dowDiff() === 0"
+            >{{ formattedDowPct() }}</span
+          >
+          <span class="text-text-muted">{{ dowDiff()! >= 0 ? 'above' : 'below' }} Dow</span>
+        </div>
+      }
+
+      <!-- S&P 500 -->
+      @if (sp500Diff() !== null) {
+        <div class="flex items-center gap-x-1">
+          <svg
+            class="w-4 h-4 shrink-0"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            [class.text-success]="sp500Diff()! > 0"
+            [class.text-error]="sp500Diff()! < 0"
+            [class.text-text-muted]="sp500Diff() === 0"
+          >
+            @if (sp500Diff()! >= 0) {
+              <path d="M12 4l8 8H4z" />
+            } @else {
+              <path d="M12 20l-8-8h16z" />
+            }
+          </svg>
+          <span
+            [class.text-success]="sp500Diff()! > 0"
+            [class.text-error]="sp500Diff()! < 0"
+            [class.text-text-muted]="sp500Diff() === 0"
+            >{{ formattedSp500Pct() }}</span
+          >
+          <span class="text-text-muted"
+            >{{ sp500Diff()! >= 0 ? 'above' : 'below' }} S&amp;P 500</span
+          >
+        </div>
+      }
+    </div>
+
+    <!-- Player average + rank row -->
+    <div class="flex justify-between items-center mt-2 text-sm">
+      <!-- Player Avg -->
+      @if (playerAvgDiff() !== null) {
+        <div class="flex items-center gap-x-1">
+          <svg
+            class="w-4 h-4 shrink-0"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            [class.text-success]="playerAvgDiff()! > 0"
+            [class.text-error]="playerAvgDiff()! < 0"
+            [class.text-text-muted]="playerAvgDiff() === 0"
+          >
+            @if (playerAvgDiff()! >= 0) {
+              <path d="M12 4l8 8H4z" />
+            } @else {
+              <path d="M12 20l-8-8h16z" />
+            }
+          </svg>
+          <span
+            [class.text-success]="playerAvgDiff()! > 0"
+            [class.text-error]="playerAvgDiff()! < 0"
+            [class.text-text-muted]="playerAvgDiff() === 0"
+            >{{ formattedPlayerAvgDiff() }}</span
+          >
+          <span class="text-text-muted"
+            >{{ playerAvgDiff()! >= 0 ? 'above' : 'below' }} Player Avg</span
+          >
+        </div>
+      }
+
+      <!-- Rank -->
+      @if (userRank() !== null) {
+        <p class="text-text-secondary font-medium">
+          Rank: {{ userRank() }}/{{ totalPlayerCount() }}
+        </p>
+      }
+    </div>
+  }
+</div>

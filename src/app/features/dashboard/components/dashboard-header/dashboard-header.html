@@ -1,0 +1,63 @@
+<!-- ── Dashboard Header ────────────────────────────────────────── -->
+<div class="gt-dh-bar">
+  <h1 class="gt-dh-title">Welcome, {{ firstName() }}</h1>
+
+  <!-- Hamburger button -->
+  <button
+    type="button"
+    class="gt-dh-hamburger"
+    [attr.aria-expanded]="menuOpen()"
+    aria-label="Toggle navigation menu"
+    (click)="toggleMenu()"
+  >
+    @if (menuOpen()) {
+      <!-- X icon -->
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="gt-dh-icon"
+        aria-hidden="true"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    } @else {
+      <!-- Hamburger icon -->
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="gt-dh-icon"
+        aria-hidden="true"
+      >
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    }
+  </button>
+</div>
+
+<!-- Nav menu (shown when open) -->
+@if (menuOpen()) {
+  <nav class="gt-dh-menu" aria-label="Dashboard navigation">
+    @if (isAdmin()) {
+      <a routerLink="/admin/profiles" class="gt-dh-link" (click)="closeMenu()">Profiles</a>
+      <a routerLink="/admin/market-data" class="gt-dh-link" (click)="closeMenu()">Market Data</a>
+      <a routerLink="/admin/historical-data" class="gt-dh-link" (click)="closeMenu()"
+        >Historical Data</a
+      >
+      <a routerLink="/audit-log" class="gt-dh-link" (click)="closeMenu()">Activity Log</a>
+    }
+    <button type="button" class="gt-dh-sign-out" (click)="onSignOut()">Sign Out</button>
+  </nav>
+}

@@ -26,24 +26,26 @@
   <!-- Table -->
   @else {
     <div class="gt-table-wrap">
-      <table class="gt-table" aria-label="Activity log">
-        <thead>
-          <tr>
-            <th scope="col">Date / Time</th>
-            <th scope="col">Performed By</th>
-            <th scope="col">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (log of rows(); track log.id) {
+      <div class="gt-table-scroll">
+        <table class="gt-table" aria-label="Activity log">
+          <thead>
             <tr>
-              <td class="col-datetime">{{ formatDateTime(log.created_at) }}</td>
-              <td class="col-performer">{{ resolvePerformerName(log) }}</td>
-              <td class="col-description">{{ buildDescription(log) }}</td>
+              <th scope="col">Date / Time</th>
+              <th scope="col">Performed By</th>
+              <th scope="col">Description</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (log of rows(); track log.id) {
+              <tr>
+                <td class="col-datetime">{{ formatDateTime(log.created_at) }}</td>
+                <td class="col-performer">{{ resolvePerformerName(log) }}</td>
+                <td class="col-description">{{ buildDescription(log) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Pagination controls -->

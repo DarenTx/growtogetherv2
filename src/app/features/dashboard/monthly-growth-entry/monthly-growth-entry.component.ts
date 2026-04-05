@@ -4,6 +4,7 @@ import {
   DestroyRef,
   OnInit,
   inject,
+  output,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -11,8 +12,6 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Session } from '@supabase/supabase-js';
 import { AuthService } from '../../../core/services/auth.service';
 import { GrowthDataService } from '../../../core/services/growth-data.service';
-
-const BANK_OPTIONS = ['Fidelity Investments', 'Edward Jones'] as const;
 
 @Component({
   selector: 'app-monthly-growth-entry',
@@ -42,12 +41,15 @@ export class MonthlyGrowthEntryComponent implements OnInit {
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
 
-  // Form controls
-  readonly bankControl = new FormControl<string>('Fidelity Investments', { nonNullable: true });
-  readonly growthPctControl = new FormControl<string>('', { nonNullable: true });
+  // Writable signal for dynamically-loaded bank names
+  readonly bankOptions = signal<string[]>([]);
 
-  // Constants exposed to template
-  readonly bankOptions = BANK_OPTIONS;
+  // Outputs
+  readonly saved = output<void>();
+
+  // Form controls
+  readonly bankControl = new FormControl<string>('', { nonNullable: true });
+  readonly growthPctControl = new FormControl<string>('', { nonNullable: true });
 
   async ngOnInit(): Promise<void> {
     // Compute previous month / year
@@ -67,6 +69,18 @@ export class MonthlyGrowthEntryComponent implements OnInit {
       return;
     }
 
+    // Fetch the user's historical bank names and populate the selector
+    try {
+      const names = await this.growthDataService.getOwnBankNames();
+      this.bankOptions.set(names);
+      if (names.length > 0) {
+        // Set without emitting so the subscription below doesn't fire prematurely
+        this.bankControl.setValue(names[0], { emitEvent: false });
+      }
+    } catch (err: unknown) {
+      console.error('[MonthlyGrowthEntry] getOwnBankNames failed', err);
+    }
+
     // Clear banners when growth % is edited
     this.growthPctControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.successMessage.set('');
@@ -78,7 +92,7 @@ export class MonthlyGrowthEntryComponent implements OnInit {
       this.loadExistingRecord();
     });
 
-    // Initial load for default bank
+    // Initial load for the selected bank
     await this.loadExistingRecord();
   }
 
@@ -134,6 +148,7 @@ export class MonthlyGrowthEntryComponent implements OnInit {
           this.bankControl.value,
         );
         this.successMessage.set('Growth cleared.');
+        this.saved.emit();
       } else {
         await this.growthDataService.saveGrowthData({
           email_key: userEmail.toLowerCase(),
@@ -144,6 +159,7 @@ export class MonthlyGrowthEntryComponent implements OnInit {
           growth_pct: parseFloat(rawValue),
         });
         this.successMessage.set('Growth saved.');
+        this.saved.emit();
       }
     } catch (err: unknown) {
       console.error('[MonthlyGrowthEntry] onSave failed', err);

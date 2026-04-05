@@ -243,6 +243,40 @@ export class GrowthDataService {
     return years;
   }
 
+  async getOwnBankNames(): Promise<string[]> {
+    this.logger.debug('Fetching own bank names');
+    const session = await this.auth.getSession();
+    if (!session) {
+      this.logger.warn('getOwnBankNames called without active session');
+      return [];
+    }
+
+    const email = session.user.email;
+    if (!email) {
+      this.logger.warn(
+        'getOwnBankNames: user has no email (phone-auth only); cannot look up by email_key',
+      );
+      return [];
+    }
+
+    // Query by email_key (not user_id) so that admin-imported rows where
+    // user_id IS NULL are also included — mirrors getOwnGrowthDataForMonth.
+    const { data, error } = await this.client
+      .from('growth_data')
+      .select('bank_name')
+      .eq('email_key', email.toLowerCase())
+      .order('bank_name');
+
+    if (error) {
+      this.logger.error('getOwnBankNames failed', error);
+      throw error;
+    }
+
+    const names = [...new Set((data ?? []).map((r: { bank_name: string }) => r.bank_name))];
+    this.logger.debug(`Found ${names.length} distinct bank names`);
+    return names;
+  }
+
   async getGrowthDataForUserYear(userId: string, year: number): Promise<GrowthData[]> {
     this.logger.debug('Fetching growth data for user year', userId, year);
     const { data, error } = await this.client

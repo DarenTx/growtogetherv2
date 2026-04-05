@@ -8,7 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { GrowthDataService } from '../../../core/services/growth-data.service';
+import { GrowthDataService } from '../../../../core/services/growth-data.service';
 
 const CURRENT_YEAR = new Date().getFullYear();
 

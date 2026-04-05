@@ -50,6 +50,53 @@ describe('GrowthDataService', () => {
     vi.spyOn(authService, 'getSession').mockResolvedValue(MOCK_SESSION as never);
   });
 
+  describe('getOwnBankNames', () => {
+    it('returns deduplicated sorted bank names for the current user', async () => {
+      mockChain.order.mockResolvedValue({
+        data: [{ bank_name: 'Edward Jones' }, { bank_name: 'Fidelity Investments' }],
+        error: null,
+      });
+      const result = await service.getOwnBankNames();
+      expect(result).toEqual(['Edward Jones', 'Fidelity Investments']);
+    });
+
+    it('deduplicates repeated bank name values', async () => {
+      mockChain.order.mockResolvedValue({
+        data: [
+          { bank_name: 'Fidelity Investments' },
+          { bank_name: 'Fidelity Investments' },
+          { bank_name: 'Edward Jones' },
+        ],
+        error: null,
+      });
+      const result = await service.getOwnBankNames();
+      expect(result).toEqual(['Fidelity Investments', 'Edward Jones']);
+    });
+
+    it('returns empty array when user has no growth data', async () => {
+      mockChain.order.mockResolvedValue({ data: [], error: null });
+      expect(await service.getOwnBankNames()).toEqual([]);
+    });
+
+    it('returns empty array when no session', async () => {
+      vi.spyOn(authService, 'getSession').mockResolvedValue(null);
+      expect(await service.getOwnBankNames()).toEqual([]);
+    });
+
+    it('returns empty array when user has no email (phone-auth only)', async () => {
+      vi.spyOn(authService, 'getSession').mockResolvedValue({
+        ...MOCK_SESSION,
+        user: { ...MOCK_SESSION.user, email: undefined },
+      } as never);
+      expect(await service.getOwnBankNames()).toEqual([]);
+    });
+
+    it('throws on Supabase error', async () => {
+      mockChain.order.mockResolvedValue({ data: null, error: new Error('DB error') });
+      await expect(service.getOwnBankNames()).rejects.toThrow('DB error');
+    });
+  });
+
   describe('saveGrowthData', () => {
     it('calls upsert with onConflict', async () => {
       mockChain.upsert.mockResolvedValue({ error: null });

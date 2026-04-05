@@ -1,0 +1,116 @@
+<div class="gt-table-wrap">
+  <div class="gt-grid-header">
+    <h2 class="gt-grid-title">Growth Grid — {{ selectedYear() }}</h2>
+    <app-select-year [selectedYear]="selectedYear()" (yearChange)="onYearChange($event)" />
+  </div>
+  <div class="gt-legend" aria-label="Color legend">
+    <span class="gt-legend-item">
+      <span class="gt-legend-swatch is-best">1.23%</span>
+      Best score
+    </span>
+    <span class="gt-legend-item">
+      <span class="gt-legend-swatch above-avg">1.23%</span>
+      Above average
+    </span>
+  </div>
+  <div class="gt-table-scroll">
+    <table class="gt-table" aria-label="Annual growth data">
+      <thead>
+        <tr>
+          <th
+            class="col-name sortable"
+            scope="col"
+            [attr.aria-sort]="
+              sortColumn() === 'name'
+                ? sortDirection() === 'asc'
+                  ? 'ascending'
+                  : 'descending'
+                : 'none'
+            "
+            (click)="sortBy('name')"
+          >
+            Name{{ sortIndicator('name') }}
+          </th>
+          <th class="col-trend" scope="col">&nbsp;</th>
+          @for (month of months; track $index) {
+            <th
+              class="col-month sortable"
+              scope="col"
+              [attr.aria-sort]="
+                sortColumn() === monthSortId($index)
+                  ? sortDirection() === 'asc'
+                    ? 'ascending'
+                    : 'descending'
+                  : 'none'
+              "
+              (click)="sortBy(monthSortId($index))"
+            >
+              {{ month }}{{ sortIndicator(monthSortId($index)) }}
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of sortedRows(); track row.profileId) {
+          <tr>
+            <td class="col-name">
+              {{ row.lastName }}, {{ row.firstName }}
+              <span class="trend-inline">
+                <app-trend-label
+                  [data]="trendData(row.months)"
+                  [showText]="false"
+                  [showIcon]="false"
+                />
+              </span>
+            </td>
+            <td class="col-trend">
+              <app-trend-label
+                [data]="trendData(row.months)"
+                [showText]="false"
+                [showIcon]="false"
+              />
+            </td>
+            @for (val of row.months; track $index) {
+              <td
+                class="col-month"
+                [class.is-best]="isBest(val, $index)"
+                [class.above-avg]="isAboveAvg(val, $index)"
+              >
+                {{ formatPct(val) }}
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr class="row-averages">
+          <td class="col-name">Player Average</td>
+          <td class="col-trend"></td>
+          @for (avg of monthAverages(); track $index) {
+            <td class="col-month">
+              {{ formatPct(avg) }}
+            </td>
+          }
+        </tr>
+        <tr class="row-market">
+          <td class="col-name">Dow</td>
+          <td class="col-trend"></td>
+          @for (val of dowMonths(); track $index) {
+            <td class="col-month">
+              {{ formatPct(val) }}
+            </td>
+          }
+        </tr>
+        <tr class="row-market">
+          <td class="col-name">S&amp;P 500</td>
+          <td class="col-trend"></td>
+          @for (val of sp500Months(); track $index) {
+            <td class="col-month">
+              {{ formatPct(val) }}
+            </td>
+          }
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
