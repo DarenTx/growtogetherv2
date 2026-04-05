@@ -52,14 +52,14 @@
     <!-- Card header -->
     <h2 class="gt-page-title">{{ cardTitle() }}</h2>
 
-    <!-- Main growth area (flex row) — items-stretch makes the icon fill the
-         height of the right column (growth % text + sparkline). -->
-    <div class="flex items-stretch gap-x-3 mb-3">
+    <!-- Main growth area (flex row) -->
+    <div class="flex items-start gap-x-3 mb-3">
       <!-- Large trend icon (left column) -->
       @if (userGrowthPct() !== null) {
         <svg
-          class="w-12 h-full shrink-0"
-          aria-hidden="true"
+          class="w-12 h-12 shrink-0"
+          role="img"
+          [attr.aria-label]="userGrowthPct()! > 0 ? 'Trending up' : userGrowthPct()! < 0 ? 'Trending down' : 'No change'"
           viewBox="0 0 24 24"
           fill="currentColor"
           [class.text-success]="userGrowthPct()! > 0"
@@ -81,22 +81,13 @@
           [class.text-success]="userGrowthPct() !== null && userGrowthPct()! > 0"
           [class.text-error]="userGrowthPct() !== null && userGrowthPct()! < 0"
           [class.text-text-muted]="userGrowthPct() === null || userGrowthPct() === 0"
+          [title]="'YTD growth: ' + formattedGrowthPct()"
+          aria-live="polite"
         >
           {{ formattedGrowthPct() }}
-          <span class="sr-only">
-            @if (userGrowthPct() !== null) {
-              @if (userGrowthPct()! > 0) {
-                Positive growth: {{ formattedGrowthPct() }}
-              } @else if (userGrowthPct()! < 0) {
-                Negative growth: {{ formattedGrowthPct() }}
-              } @else {
-                Neutral growth: {{ formattedGrowthPct() }}
-              }
-            }
-          </span>
         </span>
 
-        <div class="h-8">
+        <div class="h-8" [title]="'Month-over-month trend'" aria-label="Month-over-month trend sparkline">
           <app-trend-label [data]="ytdDataString()" [showIcon]="true" [showText]="true" />
         </div>
       </div>
@@ -126,6 +117,7 @@
             [class.text-success]="dowGrowthPct()! > 0"
             [class.text-error]="dowGrowthPct()! < 0"
             [class.text-text-muted]="dowGrowthPct() === 0"
+            [title]="'Dow Jones growth this month: ' + formattedDowPct()"
             >{{ formattedDowPct() }}</span
           >
           <span class="text-text-muted">vs Dow</span>
@@ -154,6 +146,7 @@
             [class.text-success]="sp500GrowthPct()! > 0"
             [class.text-error]="sp500GrowthPct()! < 0"
             [class.text-text-muted]="sp500GrowthPct() === 0"
+            [title]="'S&P 500 growth this month: ' + formattedSp500Pct()"
             >{{ formattedSp500Pct() }}</span
           >
           <span class="text-text-muted">vs S&amp;P 500</span>
@@ -185,6 +178,7 @@
             [class.text-success]="playerAvgDiff()! > 0"
             [class.text-error]="playerAvgDiff()! < 0"
             [class.text-text-muted]="playerAvgDiff() === 0"
+            [title]="'Your growth vs player average: ' + formattedPlayerAvgDiff()"
             >{{ formattedPlayerAvgDiff() }}</span
           >
           <span class="text-text-muted">Player Avg</span>

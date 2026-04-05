@@ -10,11 +10,66 @@
 
 .gt-scorecard-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
 .gt-scorecard-row > * {
-  flex: 1;
+  flex: 1 1 100%;
   min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .gt-scorecard-row > * {
+    flex: 1 1 0%;
+  }
+}
+
+th.col-month {
+  text-align: right;
+}
+
+.col-trend {
+  width: 11rem;
+}
+
+/* Below xl (1280px): hide dedicated trend column, show inline trend under name */
+@media (max-width: 1279px) {
+  .col-trend {
+    display: none;
+  }
+
+  .col-name {
+    white-space: normal;
+  }
+
+  .trend-inline {
+    display: block;
+    margin-top: 0.25rem;
+    height: 1.25rem;
+  }
+}
+
+/* xl and up: hide the inline trend (use the dedicated column) */
+@media (min-width: 1280px) {
+  .trend-inline {
+    display: none;
+  }
+}
+
+.gt-grid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  background-color: var(--color-brand-50);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.gt-grid-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0;
 }

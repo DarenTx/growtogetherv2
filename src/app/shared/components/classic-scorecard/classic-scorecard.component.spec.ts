@@ -592,7 +592,7 @@ describe('ClassicScorecardComponent', () => {
           .fn()
           .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 3.75 })]);
         await setupComponent(2025, 6);
-        expect(component.formattedGrowthPct()).toBe('+3.75% %');
+        expect(component.formattedGrowthPct()).toBe('+3.75%');
       });
 
       it('formats negative value with − prefix', async () => {
@@ -600,7 +600,7 @@ describe('ClassicScorecardComponent', () => {
           .fn()
           .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: -1.5 })]);
         await setupComponent(2025, 6);
-        expect(component.formattedGrowthPct()).toBe('-1.50% %');
+        expect(component.formattedGrowthPct()).toBe('-1.50%');
       });
     });
 

@@ -78,22 +78,22 @@ describe('TrendLabelComponent', () => {
   describe('deltaLabel', () => {
     it('formats positive delta with leading + and two decimal places', () => {
       fixture.componentRef.setInput('data', '2,4.5');
-      expect(component.deltaLabel()).toBe('+2.50');
+      expect(component.deltaLabel()).toBe('+2.50%');
     });
 
     it('formats negative delta without extra sign prefix', () => {
       fixture.componentRef.setInput('data', '5,3.8');
-      expect(component.deltaLabel()).toBe('-1.20');
+      expect(component.deltaLabel()).toBe('-1.20%');
     });
 
-    it('formats zero delta as "0.00"', () => {
+    it('formats zero delta as "0.00%"', () => {
       fixture.componentRef.setInput('data', '3,3');
-      expect(component.deltaLabel()).toBe('0.00');
+      expect(component.deltaLabel()).toBe('0.00%');
     });
 
-    it('returns "0.00" when fewer than two values', () => {
+    it('returns "0.00%" when fewer than two values', () => {
       fixture.componentRef.setInput('data', '7');
-      expect(component.deltaLabel()).toBe('0.00');
+      expect(component.deltaLabel()).toBe('0.00%');
     });
   });
 
@@ -235,11 +235,11 @@ describe('TrendLabelComponent', () => {
       expect(iconSpan.style.visibility).toBe('collapse');
     });
 
-    it('delta text shows "0.00" in gray when flat', () => {
+    it('delta text shows "0.00%" in gray when flat', () => {
       fixture.componentRef.setInput('data', '4,4');
       fixture.detectChanges();
       const span = fixture.nativeElement.querySelector('span.text-xs');
-      expect(span.textContent.trim()).toBe('0.00');
+      expect(span.textContent.trim()).toBe('0.00%');
     });
   });
 
@@ -253,7 +253,7 @@ describe('TrendLabelComponent', () => {
       fixture.detectChanges();
       const srOnly = fixture.nativeElement.querySelector('.sr-only');
       expect(srOnly).toBeTruthy();
-      expect(srOnly.textContent.trim()).toBe('+2.00');
+      expect(srOnly.textContent.trim()).toBe('+2.00%');
     });
 
     it('does not render sr-only span when showText is true', () => {

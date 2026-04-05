@@ -58,7 +58,7 @@ describe('MonthlyGrowthEntryComponent', () => {
   // ─── 2. displayLabel reflects previous month on init (run in March) ─────
 
   it('displayLabel reflects previous month (February 2026) when current date is March 2026', async () => {
-    // Current test date is March 2, 2026 — previous month is February 2026
+    vi.setSystemTime(new Date('2026-03-02T12:00:00Z'));
     await createComponent();
     expect(component.displayLabel).toBe('February 2026');
   });

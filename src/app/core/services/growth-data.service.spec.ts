@@ -120,42 +120,30 @@ describe('GrowthDataService', () => {
 
   describe('getPersonBankList', () => {
     const RAW_ROWS = [
-      {
-        user_id: 'u1',
-        bank_name: 'Fidelity Investments',
-        profiles: { first_name: 'Alice', last_name: 'Smith' },
-      },
-      {
-        user_id: 'u2',
-        bank_name: 'Edward Jones',
-        profiles: { first_name: 'Bob', last_name: 'Jones' },
-      },
-      // duplicate — should be de-duped
-      {
-        user_id: 'u1',
-        bank_name: 'Fidelity Investments',
-        profiles: { first_name: 'Alice', last_name: 'Smith' },
-      },
-      // null names — should be substituted
-      {
-        user_id: 'u3',
-        bank_name: 'Vanguard',
-        profiles: { first_name: null, last_name: null },
-      },
+      { user_id: 'u1', bank_name: 'Fidelity Investments', first_name: 'Alice', last_name: 'Smith' },
+      { user_id: 'u2', bank_name: 'Edward Jones', first_name: 'Bob', last_name: 'Jones' },
+      { user_id: 'u3', bank_name: 'Vanguard', first_name: null, last_name: null },
     ];
 
-    it('de-duplicates (user_id, bank_name) pairs', async () => {
-      mockChain.not = vi.fn().mockResolvedValue({ data: RAW_ROWS, error: null });
-      mockChain.select.mockReturnValue(mockChain);
+    function mockPersonBankListQuery(response: { data: unknown; error: unknown }) {
+      // select → order → order → order (last order resolves)
+      mockChain.order
+        .mockReturnValueOnce(mockChain)
+        .mockReturnValueOnce(mockChain)
+        .mockResolvedValueOnce(response);
+    }
+
+    it('maps rows to PersonBankEntry objects', async () => {
+      mockPersonBankListQuery({ data: RAW_ROWS, error: null });
 
       const result = await service.getPersonBankList();
-      const u1Entries = result.filter((e) => e.userId === 'u1');
-      expect(u1Entries.length).toBe(1);
+      const u1 = result.find((e) => e.userId === 'u1');
+      expect(u1?.firstName).toBe('Alice');
+      expect(u1?.bankName).toBe('Fidelity Investments');
     });
 
     it('substitutes "Unknown" for null first_name and "Person" for null last_name', async () => {
-      mockChain.not = vi.fn().mockResolvedValue({ data: RAW_ROWS, error: null });
-      mockChain.select.mockReturnValue(mockChain);
+      mockPersonBankListQuery({ data: RAW_ROWS, error: null });
 
       const result = await service.getPersonBankList();
       const u3 = result.find((e) => e.userId === 'u3');
@@ -164,8 +152,7 @@ describe('GrowthDataService', () => {
     });
 
     it('sorts by lastName → firstName → bankName ascending', async () => {
-      mockChain.not = vi.fn().mockResolvedValue({ data: RAW_ROWS, error: null });
-      mockChain.select.mockReturnValue(mockChain);
+      mockPersonBankListQuery({ data: RAW_ROWS, error: null });
 
       const result = await service.getPersonBankList();
       const lastNames = result.map((e) => e.lastName.toLowerCase());
@@ -173,8 +160,7 @@ describe('GrowthDataService', () => {
     });
 
     it('throws on Supabase error', async () => {
-      mockChain.not = vi.fn().mockResolvedValue({ data: null, error: new Error('DB error') });
-      mockChain.select.mockReturnValue(mockChain);
+      mockPersonBankListQuery({ data: null, error: new Error('DB error') });
 
       await expect(service.getPersonBankList()).rejects.toThrow('DB error');
     });

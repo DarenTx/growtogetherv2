@@ -14,7 +14,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { GrowthDataService } from '../../core/services/growth-data.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { ClassicScorecardComponent } from '../../shared/components/classic-scorecard/classic-scorecard.component';
-import { PersonSelectorComponent } from '../../shared/components/person-selector/person-selector.component';
+import { SelectYearComponent } from '../../shared/components/select-year/select-year.component';
+import { TrendLabelComponent } from '../../shared/components/trend-label/trend-label.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
@@ -50,7 +51,7 @@ export interface DashboardRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ClassicScorecardComponent, PersonSelectorComponent],
+  imports: [RouterLink, ClassicScorecardComponent, SelectYearComponent, TrendLabelComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -61,6 +62,7 @@ export class DashboardComponent implements OnInit {
   private readonly growthDataService = inject(GrowthDataService);
   private readonly router = inject(Router);
 
+  readonly selectedYear = signal<number>(CURRENT_YEAR);
   readonly currentYear = CURRENT_YEAR;
   readonly currentMonth = CURRENT_MONTH;
   readonly prevMonth = PREV_MONTH;
@@ -139,13 +141,27 @@ export class DashboardComponent implements OnInit {
       const [ownProfile, profiles, growthData] = await Promise.all([
         this.profileService.getProfile(),
         this.adminService.getAllProfiles(),
-        this.growthDataService.getGrowthDataForYear(CURRENT_YEAR),
+        this.growthDataService.getGrowthDataForYear(this.selectedYear()),
       ]);
       this.profile.set(ownProfile);
       this.allProfiles.set(profiles);
       this.growthData.set(growthData);
     } catch (err: unknown) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Failed to load dashboard data.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async onYearChange(year: number): Promise<void> {
+    this.selectedYear.set(year);
+    this.loading.set(true);
+    this.errorMessage.set(null);
+    try {
+      const growthData = await this.growthDataService.getGrowthDataForYear(year);
+      this.growthData.set(growthData);
+    } catch (err: unknown) {
+      this.errorMessage.set(err instanceof Error ? err.message : 'Failed to load growth data.');
     } finally {
       this.loading.set(false);
     }
@@ -169,8 +185,12 @@ export class DashboardComponent implements OnInit {
     return this.sortDirection() === 'asc' ? ' ▲' : ' ▼';
   }
 
+  trendData(months: (number | null)[]): string {
+    return months.filter((v): v is number => v !== null).join(',');
+  }
+
   formatPct(value: number | null): string {
-    if (value === null) return '—';
+    if (value === null) return '';
     const sign = value >= 0 ? '+' : '';
     return `${sign}${value.toFixed(2)}%`;
   }
