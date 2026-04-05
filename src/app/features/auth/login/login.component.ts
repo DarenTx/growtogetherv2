@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
 import {
   isEmail,
   isValidPhone,
@@ -29,7 +29,7 @@ export class LoginComponent {
   });
 
   constructor(
-    private readonly supabase: SupabaseService,
+    private readonly auth: AuthService,
     private readonly router: Router,
   ) {}
 
@@ -64,7 +64,7 @@ export class LoginComponent {
     try {
       if (isEmail(rawValue)) {
         const email = normalizeEmail(rawValue);
-        await this.supabase.signInWithEmail(email);
+        await this.auth.signInWithEmail(email);
         this.sentTo.set(email);
         this.state.set('sent');
       } else {
@@ -74,7 +74,7 @@ export class LoginComponent {
           this.state.set('idle');
           return;
         }
-        await this.supabase.signInWithPhone(e164);
+        await this.auth.signInWithPhone(e164);
         this.sentTo.set(e164);
         this.state.set('sent');
       }

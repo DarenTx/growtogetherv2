@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { SupabaseService } from '../../../core/services/supabase.service';
-import { createMockSupabaseService } from '../../../core/testing/mock-supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { createMockAuthService } from '../../../core/testing/mock-supabase.service';
 import { LoginComponent } from './login.component';
 
 describe('LoginComponent', () => {
@@ -11,10 +11,10 @@ describe('LoginComponent', () => {
   let mockService: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    mockService = createMockAuthService();
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [provideRouter([]), { provide: SupabaseService, useValue: mockService }],
+      providers: [provideRouter([]), { provide: AuthService, useValue: mockService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);

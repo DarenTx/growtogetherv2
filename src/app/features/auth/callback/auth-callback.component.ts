@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from '@supabase/supabase-js';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { ProfileService } from '../../../core/services/profile.service';
 
 @Component({
   selector: 'app-auth-callback',
@@ -16,12 +17,13 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
   private authSubscription: Subscription | null = null;
 
   constructor(
-    private readonly supabase: SupabaseService,
+    private readonly auth: AuthService,
+    private readonly profileService: ProfileService,
     private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
-    this.authSubscription = this.supabase.onAuthStateChange((event, session) => {
+    this.authSubscription = this.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         void this.handleSignedIn();
       } else if (event === 'TOKEN_REFRESHED' && session) {
@@ -45,7 +47,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
 
   private async checkExistingSession(): Promise<void> {
     try {
-      const session = await this.supabase.getSession();
+      const session = await this.auth.getSession();
       if (session) {
         await this.handleSignedIn();
       } else {
@@ -62,7 +64,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
 
   private async handleSignedIn(): Promise<void> {
     try {
-      const profile = await this.supabase.getProfile();
+      const profile = await this.profileService.getProfile();
       if (!profile || !profile.registration_complete) {
         await this.router.navigate(['/register']);
       } else {

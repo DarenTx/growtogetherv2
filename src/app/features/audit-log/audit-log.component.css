@@ -1,0 +1,24 @@
+:host {
+  display: block;
+}
+
+.gt-dash-container {
+  padding: 1.25rem 1rem 3rem;
+  animation: fade-in 0.2s ease-out;
+}
+
+/* ── Column widths ──────────────────────────────────────────── */
+.gt-table .col-datetime {
+  width: 12rem; /* ~192px — prevents timestamp wrapping */
+  white-space: nowrap;
+}
+
+.gt-table .col-performer {
+  width: 10rem; /* ~160px */
+  white-space: nowrap;
+}
+
+.gt-table .col-description {
+  width: auto;
+  white-space: normal; /* allow wrapping for long descriptions */
+}

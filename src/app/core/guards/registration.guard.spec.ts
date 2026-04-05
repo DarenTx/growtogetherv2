@@ -1,28 +1,37 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree, provideRouter } from '@angular/router';
-import { SupabaseService } from '../services/supabase.service';
+import { AuthService } from '../services/auth.service';
+import { ProfileService } from '../services/profile.service';
 import {
   MOCK_PROFILE_COMPLETE,
   MOCK_PROFILE_INCOMPLETE,
   MOCK_SESSION,
-  createMockSupabaseService,
+  createMockAuthService,
+  createMockProfileService,
 } from '../testing/mock-supabase.service';
 import { registrationGuard } from './registration.guard';
 
 describe('registrationGuard', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockService: Record<string, any>;
+  let mockAuth: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockProfile: Record<string, any>;
 
   beforeEach(() => {
-    mockService = createMockSupabaseService();
+    mockAuth = createMockAuthService();
+    mockProfile = createMockProfileService();
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: SupabaseService, useValue: mockService }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: mockAuth },
+        { provide: ProfileService, useValue: mockProfile },
+      ],
     });
   });
 
   it('returns true when session exists and registration is complete', async () => {
-    mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
-    mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE);
+    mockAuth['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
+    mockProfile['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE);
     const result = await TestBed.runInInjectionContext(() =>
       registrationGuard({} as never, {} as never),
     );
@@ -30,7 +39,7 @@ describe('registrationGuard', () => {
   });
 
   it('redirects to /login when no session', async () => {
-    mockService['getSession'] = vi.fn().mockResolvedValue(null);
+    mockAuth['getSession'] = vi.fn().mockResolvedValue(null);
     const result = await TestBed.runInInjectionContext(() =>
       registrationGuard({} as never, {} as never),
     );
@@ -40,8 +49,8 @@ describe('registrationGuard', () => {
   });
 
   it('redirects to /register when registration is incomplete', async () => {
-    mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
-    mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_INCOMPLETE);
+    mockAuth['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
+    mockProfile['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_INCOMPLETE);
     const result = await TestBed.runInInjectionContext(() =>
       registrationGuard({} as never, {} as never),
     );
@@ -51,8 +60,8 @@ describe('registrationGuard', () => {
   });
 
   it('redirects to /register when profile is null', async () => {
-    mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
-    mockService['getProfile'] = vi.fn().mockResolvedValue(null);
+    mockAuth['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
+    mockProfile['getProfile'] = vi.fn().mockResolvedValue(null);
     const result = await TestBed.runInInjectionContext(() =>
       registrationGuard({} as never, {} as never),
     );

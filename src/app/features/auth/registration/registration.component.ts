@@ -3,7 +3,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router } from '@angular/router';
 import { Profile } from '../../../core/models/profile.interface';
 import { isValidPhone, normalizeEmail, normalizeToE164 } from '../../../core/utils/phone.utils';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { ProfileService } from '../../../core/services/profile.service';
 
 type RegistrationState = 'loading' | 'ready' | 'submitting' | 'error';
 
@@ -30,7 +31,8 @@ export class RegistrationComponent implements OnInit {
   private existingProfile: Profile | null = null;
 
   constructor(
-    private readonly supabase: SupabaseService,
+    private readonly auth: AuthService,
+    private readonly profileService: ProfileService,
     private readonly router: Router,
   ) {}
 
@@ -52,13 +54,13 @@ export class RegistrationComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const session = await this.supabase.getSession();
+      const session = await this.auth.getSession();
       if (!session) {
         await this.router.navigate(['/login']);
         return;
       }
 
-      this.existingProfile = await this.supabase.getProfile();
+      this.existingProfile = await this.profileService.getProfile();
       this.preFillForm(session.user);
       this.state.set('ready');
     } catch {
@@ -112,7 +114,7 @@ export class RegistrationComponent implements OnInit {
     this.errorMessage.set('');
 
     try {
-      await this.supabase.completeRegistration({
+      await this.profileService.completeRegistration({
         first_name: (this.firstNameControl.value as string).trim(),
         last_name: (this.lastNameControl.value as string).trim(),
         email: normalizeEmail(this.emailControl.value as string),

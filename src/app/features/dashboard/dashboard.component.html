@@ -15,10 +15,20 @@
           <a routerLink="/admin/profiles" class="gt-nav-link">Profiles</a>
           <a routerLink="/admin/market-data" class="gt-nav-link">Market Data</a>
           <a routerLink="/admin/historical-data" class="gt-nav-link">Historical Data</a>
+          <a routerLink="/audit-log" class="gt-nav-link">Activity Log</a>
         }
         <button type="button" class="gt-sign-out" (click)="signOut()">Sign Out</button>
       </nav>
     </div>
+
+    @if (profile()?.id) {
+      <div class="gt-scorecard-row">
+        <app-classic-scorecard [year]="currentYear" [month]="currentMonth" [uuid]="profile()!.id" />
+        <app-classic-scorecard [year]="prevMonthYear" [month]="prevMonth" [uuid]="profile()!.id" />
+      </div>
+    }
+
+    <app-person-selector></app-person-selector>
 
     <div class="gt-table-wrap">
       <table class="gt-table" aria-label="Annual growth data">

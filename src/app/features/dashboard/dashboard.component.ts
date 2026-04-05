@@ -9,9 +9,17 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { GrowthData } from '../../core/models/growth-data.interface';
 import { Profile } from '../../core/models/profile.interface';
-import { SupabaseService } from '../../core/services/supabase.service';
+import { AdminService } from '../../core/services/admin.service';
+import { AuthService } from '../../core/services/auth.service';
+import { GrowthDataService } from '../../core/services/growth-data.service';
+import { ProfileService } from '../../core/services/profile.service';
+import { ClassicScorecardComponent } from '../../shared/components/classic-scorecard/classic-scorecard.component';
+import { PersonSelectorComponent } from '../../shared/components/person-selector/person-selector.component';
 
 const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_MONTH = new Date().getMonth() + 1;
+const PREV_MONTH = CURRENT_MONTH === 1 ? 12 : CURRENT_MONTH - 1;
+const PREV_MONTH_YEAR = CURRENT_MONTH === 1 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
 
 export const MONTHS = [
   'Jan',
@@ -42,15 +50,21 @@ export interface DashboardRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, ClassicScorecardComponent, PersonSelectorComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly auth = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
+  private readonly adminService = inject(AdminService);
+  private readonly growthDataService = inject(GrowthDataService);
   private readonly router = inject(Router);
 
   readonly currentYear = CURRENT_YEAR;
+  readonly currentMonth = CURRENT_MONTH;
+  readonly prevMonth = PREV_MONTH;
+  readonly prevMonthYear = PREV_MONTH_YEAR;
   readonly months = MONTHS;
 
   readonly profile = signal<Profile | null>(null);
@@ -123,9 +137,9 @@ export class DashboardComponent implements OnInit {
     this.errorMessage.set(null);
     try {
       const [ownProfile, profiles, growthData] = await Promise.all([
-        this.supabase.getProfile(),
-        this.supabase.getAllProfiles(),
-        this.supabase.getGrowthDataForYear(CURRENT_YEAR),
+        this.profileService.getProfile(),
+        this.adminService.getAllProfiles(),
+        this.growthDataService.getGrowthDataForYear(CURRENT_YEAR),
       ]);
       this.profile.set(ownProfile);
       this.allProfiles.set(profiles);
@@ -162,7 +176,7 @@ export class DashboardComponent implements OnInit {
   }
 
   async signOut(): Promise<void> {
-    await this.supabase.signOut();
+    await this.auth.signOut();
     await this.router.navigate(['/login']);
   }
 }

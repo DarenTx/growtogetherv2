@@ -9,7 +9,8 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GrowthData } from '../../../core/models/growth-data.interface';
 import { Profile } from '../../../core/models/profile.interface';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { AdminService } from '../../../core/services/admin.service';
+import { GrowthDataService } from '../../../core/services/growth-data.service';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
@@ -23,7 +24,8 @@ const DEFAULT_BANK = 'Fidelity Investments';
   styleUrl: './enter-historical-data.component.css',
 })
 export class EnterHistoricalDataComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly adminService = inject(AdminService);
+  private readonly growthDataService = inject(GrowthDataService);
   private readonly fb = inject(FormBuilder);
 
   readonly profiles = signal<Profile[]>([]);
@@ -44,7 +46,6 @@ export class EnterHistoricalDataComponent implements OnInit {
     year: [CURRENT_YEAR, [Validators.required, Validators.min(2001), Validators.max(2100)]],
     month: [CURRENT_MONTH, [Validators.required, Validators.min(1), Validators.max(12)]],
     bank_name: [DEFAULT_BANK, Validators.required],
-    is_managed: [false],
     growth_pct: [
       null as number | null,
       [Validators.required, Validators.min(-999.99), Validators.max(999.99)],
@@ -55,7 +56,7 @@ export class EnterHistoricalDataComponent implements OnInit {
     this.loadingProfiles.set(true);
     this.profileLoadError.set(null);
     try {
-      const list = await this.supabase.getAllProfiles();
+      const list = await this.adminService.getAllProfiles();
       this.profiles.set(list);
     } catch (err: unknown) {
       this.profileLoadError.set(err instanceof Error ? err.message : 'Failed to load profiles.');
@@ -73,7 +74,7 @@ export class EnterHistoricalDataComponent implements OnInit {
     this.form.controls.profile_id.setValue(profileId);
 
     if (profile?.email) {
-      const data = await this.supabase.getGrowthDataByEmailKey(profile.email);
+      const data = await this.growthDataService.getGrowthDataByEmailKey(profile.email);
       this.growthData.set(data);
     } else {
       this.growthData.set([]);
@@ -90,18 +91,17 @@ export class EnterHistoricalDataComponent implements OnInit {
     this.successMessage.set(null);
     this.errorMessage.set(null);
 
-    const { profile_id, year, month, bank_name, is_managed, growth_pct } = this.form.getRawValue();
+    const { profile_id, year, month, bank_name, growth_pct } = this.form.getRawValue();
     const profile = this.profiles().find((p) => p.id === profile_id) ?? null;
     const email_key = profile?.email ?? '';
 
     try {
-      await this.supabase.saveGrowthData({
+      await this.growthDataService.saveGrowthData({
         email_key,
-        user_id: null,
+        user_id: profile_id || null,
         year,
         month,
         bank_name,
-        is_managed,
         growth_pct: growth_pct!,
       });
       this.successMessage.set('Growth data saved.');
@@ -113,7 +113,7 @@ export class EnterHistoricalDataComponent implements OnInit {
 
       // Refresh growth data list for the selected profile
       if (email_key) {
-        const data = await this.supabase.getGrowthDataByEmailKey(email_key);
+        const data = await this.growthDataService.getGrowthDataByEmailKey(email_key);
         this.growthData.set(data);
       }
     } catch (err: unknown) {
@@ -129,7 +129,6 @@ export class EnterHistoricalDataComponent implements OnInit {
       year: CURRENT_YEAR,
       month: CURRENT_MONTH,
       bank_name: DEFAULT_BANK,
-      is_managed: false,
       growth_pct: null,
     });
     this.selectedProfile.set(null);

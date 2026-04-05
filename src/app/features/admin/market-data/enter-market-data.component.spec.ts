@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { SupabaseService } from '../../../core/services/supabase.service';
-import { createMockSupabaseService } from '../../../core/testing/mock-supabase.service';
+import { MarketDataService } from '../../../core/services/market-data.service';
+import { createMockMarketDataService } from '../../../core/testing/mock-supabase.service';
 import { EnterMarketDataComponent } from './enter-market-data.component';
 
 const MOCK_INDEXES = [
@@ -23,13 +23,13 @@ describe('EnterMarketDataComponent', () => {
   let mockService: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    mockService = createMockMarketDataService();
     mockService['getMarketIndexes'] = vi.fn().mockResolvedValue(MOCK_INDEXES);
     mockService['saveMarketIndex'] = vi.fn().mockResolvedValue(undefined);
 
     await TestBed.configureTestingModule({
       imports: [EnterMarketDataComponent],
-      providers: [provideRouter([]), { provide: SupabaseService, useValue: mockService }],
+      providers: [provideRouter([]), { provide: MarketDataService, useValue: mockService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EnterMarketDataComponent);

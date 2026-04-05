@@ -1,3 +1,5 @@
+// ─── Shared constants ─────────────────────────────────────────────────────────
+
 export const MOCK_SESSION = {
   user: { id: 'user-uuid-1', email: 'john@example.com', phone: '+12125551234' },
   access_token: 'mock-token',
@@ -29,27 +31,66 @@ export const MOCK_PROFILE_ADMIN = {
   is_admin: true,
 };
 
+// ─── Per-service mock factories ───────────────────────────────────────────────
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function createMockSupabaseService(): Record<string, any> {
+export function createMockAuthService(): Record<string, any> {
   return {
     getSession: vi.fn().mockResolvedValue(MOCK_SESSION),
-    getProfile: vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE),
     signInWithEmail: vi.fn().mockResolvedValue(undefined),
     signInWithPhone: vi.fn().mockResolvedValue(undefined),
     signOut: vi.fn().mockResolvedValue(undefined),
     onAuthStateChange: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
+    authCallbackUrl: 'http://localhost/auth/callback',
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createMockProfileService(): Record<string, any> {
+  return {
+    getProfile: vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE),
     completeRegistration: vi.fn().mockResolvedValue(true),
     updateProfile: vi.fn().mockResolvedValue(undefined),
     isAdmin: vi.fn().mockResolvedValue(false),
+    getRegisteredProfiles: vi.fn().mockResolvedValue([]),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createMockGrowthDataService(): Record<string, any> {
+  return {
     getOwnGrowthData: vi.fn().mockResolvedValue([]),
+    getOwnGrowthDataForMonth: vi.fn().mockResolvedValue(null),
+    deleteOwnGrowthDataForMonth: vi.fn().mockResolvedValue(undefined),
     getAllGrowthData: vi.fn().mockResolvedValue([]),
     getGrowthDataForYear: vi.fn().mockResolvedValue([]),
     saveGrowthData: vi.fn().mockResolvedValue(undefined),
+    getGrowthDataByEmailKey: vi.fn().mockResolvedValue([]),
+    getGrowthDataForUserYear: vi.fn().mockResolvedValue([]),
+    getGrowthDataForYearMonth: vi.fn().mockResolvedValue([]),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createMockMarketDataService(): Record<string, any> {
+  return {
     getMarketIndexes: vi.fn().mockResolvedValue([]),
     saveMarketIndex: vi.fn().mockResolvedValue(undefined),
+    getMarketIndexesForMonth: vi.fn().mockResolvedValue([]),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createMockAuditService(): Record<string, any> {
+  return {
+    getAuditLogPage: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createMockAdminService(): Record<string, any> {
+  return {
     getAllProfiles: vi.fn().mockResolvedValue([]),
     adminCreateProfile: vi.fn().mockResolvedValue(undefined),
-    getGrowthDataByEmailKey: vi.fn().mockResolvedValue([]),
-    authCallbackUrl: 'http://localhost/auth/callback',
   };
 }

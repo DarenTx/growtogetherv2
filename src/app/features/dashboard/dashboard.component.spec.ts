@@ -1,9 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { SupabaseService } from '../../core/services/supabase.service';
+import { AdminService } from '../../core/services/admin.service';
+import { AuthService } from '../../core/services/auth.service';
+import { GrowthDataService } from '../../core/services/growth-data.service';
+import { ProfileService } from '../../core/services/profile.service';
 import {
   MOCK_PROFILE_COMPLETE,
-  createMockSupabaseService,
+  createMockAdminService,
+  createMockAuthService,
+  createMockGrowthDataService,
+  createMockProfileService,
 } from '../../core/testing/mock-supabase.service';
 import { DashboardComponent } from './dashboard.component';
 
@@ -15,14 +21,23 @@ describe('DashboardComponent', () => {
   let router: Router;
 
   beforeEach(async () => {
-    mockService = createMockSupabaseService();
+    // Combine all service mocks into one object for convenience
+    mockService = {
+      ...createMockAuthService(),
+      ...createMockProfileService(),
+      ...createMockAdminService(),
+      ...createMockGrowthDataService(),
+    };
     mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE);
 
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [
         provideRouter([{ path: 'login', component: DashboardComponent }]),
-        { provide: SupabaseService, useValue: mockService },
+        { provide: AuthService, useValue: mockService },
+        { provide: ProfileService, useValue: mockService },
+        { provide: AdminService, useValue: mockService },
+        { provide: GrowthDataService, useValue: mockService },
       ],
     }).compileComponents();
 
