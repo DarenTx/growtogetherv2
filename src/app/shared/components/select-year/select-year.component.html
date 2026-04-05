@@ -1,0 +1,10 @@
+<select
+  class="gt-year-select"
+  [value]="displayValue()"
+  (change)="onYearChange($event)"
+  aria-label="Select year"
+>
+  @for (year of years(); track year) {
+    <option [value]="year" [selected]="year === displayValue()">{{ year }}</option>
+  }
+</select>

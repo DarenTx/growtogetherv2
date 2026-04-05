@@ -210,6 +210,39 @@ export class GrowthDataService {
     return entries;
   }
 
+  async getAvailableYears(): Promise<number[]> {
+    this.logger.debug('Fetching all available years');
+    const { data, error } = await this.client
+      .from('growth_data')
+      .select('year')
+      .order('year', { ascending: false });
+
+    if (error) {
+      this.logger.error('getAvailableYears failed', error);
+      throw error;
+    }
+    const years = [...new Set((data ?? []).map((r: { year: number }) => r.year))];
+    this.logger.debug(`Available years: ${years.join(', ')}`);
+    return years;
+  }
+
+  async getAvailableYearsForUser(userId: string): Promise<number[]> {
+    this.logger.debug('Fetching available years for user', userId);
+    const { data, error } = await this.client
+      .from('growth_data')
+      .select('year')
+      .eq('user_id', userId)
+      .order('year', { ascending: false });
+
+    if (error) {
+      this.logger.error('getAvailableYearsForUser failed', error);
+      throw error;
+    }
+    const years = [...new Set((data ?? []).map((r: { year: number }) => r.year))];
+    this.logger.debug(`Available years for user: ${years.join(', ')}`);
+    return years;
+  }
+
   async getGrowthDataForUserYear(userId: string, year: number): Promise<GrowthData[]> {
     this.logger.debug('Fetching growth data for user year', userId, year);
     const { data, error } = await this.client

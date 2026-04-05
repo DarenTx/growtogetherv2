@@ -96,7 +96,7 @@ describe('EnterHistoricalDataComponent', () => {
     expect(mockService['saveGrowthData']).toHaveBeenCalledWith(
       expect.objectContaining({
         email_key: 'john@example.com',
-        user_id: null,
+        user_id: MOCK_PROFILE_COMPLETE.id,
         year: 2024,
         month: 3,
         bank_name: 'Fidelity Investments',

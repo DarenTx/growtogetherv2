@@ -68,6 +68,9 @@ export function createMockGrowthDataService(): Record<string, any> {
     getGrowthDataByEmailKey: vi.fn().mockResolvedValue([]),
     getGrowthDataForUserYear: vi.fn().mockResolvedValue([]),
     getGrowthDataForYearMonth: vi.fn().mockResolvedValue([]),
+    getAvailableYears: vi.fn().mockResolvedValue([]),
+    getAvailableYearsForUser: vi.fn().mockResolvedValue([]),
+    getPersonBankList: vi.fn().mockResolvedValue([]),
   };
 }
 

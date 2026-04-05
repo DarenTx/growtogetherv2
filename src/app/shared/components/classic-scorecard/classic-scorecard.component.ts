@@ -198,7 +198,7 @@ export class ClassicScorecardComponent implements OnInit {
   readonly formattedGrowthPct = computed((): string => {
     const v = this.userGrowthPct();
     if (v === null) return '—';
-    return fmt(v) + ' %';
+    return fmt(v);
   });
 
   readonly formattedDowPct = computed((): string => {

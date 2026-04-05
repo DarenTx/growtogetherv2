@@ -57,7 +57,10 @@ describe('MarketDataService', () => {
     it('calls upsert', async () => {
       mockChain.upsert.mockResolvedValue({ error: null });
       await service.saveMarketIndex(MOCK_INDEX);
-      expect(mockChain.upsert).toHaveBeenCalledWith(MOCK_INDEX);
+      expect(mockChain.upsert).toHaveBeenCalledWith(
+        MOCK_INDEX,
+        expect.objectContaining({ onConflict: 'index_name,year,month' }),
+      );
     });
 
     it('throws on error', async () => {

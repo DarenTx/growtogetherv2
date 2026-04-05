@@ -46,7 +46,7 @@ export class TrendLabelComponent {
 
   readonly deltaLabel = computed((): string => {
     const d = this.delta();
-    return d > 0 ? `+${d.toFixed(2)}` : d.toFixed(2);
+    return d > 0 ? `+${d.toFixed(2)}%` : `${d.toFixed(2)}%`;
   });
 
   /**

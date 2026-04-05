@@ -29,6 +29,7 @@ describe('DashboardComponent', () => {
       ...createMockGrowthDataService(),
     };
     mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE);
+    mockService['getAvailableYears'] = vi.fn().mockResolvedValue([2026, 2025, 2024]);
 
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
@@ -79,6 +80,18 @@ describe('DashboardComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent?.toLowerCase()).toContain('loading');
     resolveAll();
+  });
+
+  it('displays growth grid title with current year', () => {
+    const title = fixture.nativeElement.querySelector('.gt-grid-title') as HTMLElement;
+    expect(title.textContent).toContain(String(new Date().getFullYear()));
+  });
+
+  it('reloads growth data when year changes', async () => {
+    mockService['getGrowthDataForYear'] = vi.fn().mockResolvedValue([]);
+    await component.onYearChange(2024);
+    expect(component.selectedYear()).toBe(2024);
+    expect(mockService['getGrowthDataForYear']).toHaveBeenCalledWith(2024);
   });
 
   it('calls signOut and navigates to /login on sign out', async () => {
