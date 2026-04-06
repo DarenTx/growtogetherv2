@@ -7,6 +7,7 @@ import {
   createMockProfileService,
 } from '../../../core/testing/mock-supabase.service';
 import { LoginComponent } from './login.component';
+import { environment } from '../../../../environments/environment';
 
 describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
@@ -81,5 +82,23 @@ describe('LoginComponent', () => {
 
     expect(component.state()).toBe('error');
     expect(component.errorMessage()).toContain('Rate limit reached');
+  });
+
+  it('hides Google auth and skips one tap when Google login is disabled', () => {
+    const originalGoogleFlag = environment.enableGoogleLogin;
+    environment.enableGoogleLogin = false;
+    try {
+      const oneTapSpy = vi.spyOn(LoginComponent.prototype, 'startGoogleOneTap').mockResolvedValue();
+      oneTapSpy.mockClear();
+
+      const disabledFixture = TestBed.createComponent(LoginComponent);
+      disabledFixture.detectChanges();
+
+      const googleSection = disabledFixture.nativeElement.querySelector('.gt-google-actions');
+      expect(oneTapSpy).not.toHaveBeenCalled();
+      expect(googleSection).toBeNull();
+    } finally {
+      environment.enableGoogleLogin = originalGoogleFlag;
+    }
   });
 });
