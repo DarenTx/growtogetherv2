@@ -29,7 +29,9 @@
         >
           <option value="" disabled>Select a profile…</option>
           @for (p of profiles(); track p.id) {
-            <option [value]="p.id">{{ p.first_name }} {{ p.last_name }} — {{ p.email }}</option>
+            <option [value]="p.id">
+              {{ p.first_name }} {{ p.last_name }} — {{ p.work_email }}
+            </option>
           }
         </select>
         @if (form.controls.profile_id.invalid && form.controls.profile_id.touched) {

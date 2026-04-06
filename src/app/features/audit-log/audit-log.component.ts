@@ -82,7 +82,7 @@ export class AuditLogComponent implements OnInit {
         if (!data) return `${action} on ${table_name}.`;
         const first = data['first_name'] as string;
         const last = data['last_name'] as string;
-        const email = data['email'] as string;
+        const email = (data['work_email'] as string | undefined) ?? (data['email'] as string);
         if (!first && !last && !email) return `${action} on ${table_name}.`;
         if (action === 'INSERT') return `Added a new profile for ${first} ${last} (${email}).`;
         if (action === 'UPDATE') return `Updated the profile for ${first} ${last} (${email}).`;

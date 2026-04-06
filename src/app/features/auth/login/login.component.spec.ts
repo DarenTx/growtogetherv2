@@ -1,20 +1,34 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { createMockAuthService } from '../../../core/testing/mock-supabase.service';
+import { ProfileService } from '../../../core/services/profile.service';
+import {
+  createMockAuthService,
+  createMockProfileService,
+} from '../../../core/testing/mock-supabase.service';
 import { LoginComponent } from './login.component';
 
 describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
   let component: LoginComponent;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockService: Record<string, any>;
+  let mockAuth: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockProfile: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = createMockAuthService();
+    mockAuth = createMockAuthService();
+    mockProfile = createMockProfileService();
+
+    vi.spyOn(LoginComponent.prototype, 'startGoogleOneTap').mockResolvedValue();
+
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [provideRouter([]), { provide: AuthService, useValue: mockService }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: mockAuth },
+        { provide: ProfileService, useValue: mockProfile },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
@@ -22,127 +36,50 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('creates the component', () => {
     expect(component).toBeTruthy();
   });
 
-  it('renders the sign-in heading', () => {
-    const h1 = fixture.nativeElement.querySelector('h1') as HTMLElement;
-    expect(h1.textContent).toContain('Sign in');
-  });
-
-  it('shows required error when form submitted empty', async () => {
-    const button = fixture.nativeElement.querySelector(
-      'button[type="submit"]',
-    ) as HTMLButtonElement;
-    button.click();
-    fixture.detectChanges();
-    const error = fixture.nativeElement.querySelector('.field-error') as HTMLElement;
-    expect(error?.textContent).toContain('required');
-  });
-
-  it('shows phone error for invalid phone number on blur', () => {
-    component.identifierControl.setValue('123');
+  it('shows an email validation error on blur for invalid input', () => {
+    component.identifierControl.setValue('not-an-email');
     component.onIdentifierBlur();
-    fixture.detectChanges();
-    expect(component.phoneError()).toBeTruthy();
+    expect(component.emailError()).toContain('valid email');
   });
 
-  it('clears phone error when input is empty on blur', () => {
-    component.identifierControl.setValue('');
-    component.onIdentifierBlur();
-    expect(component.phoneError()).toBe('');
-  });
-
-  it('does not show phone error for a valid email', () => {
+  it('clears the email validation error on blur for valid input', () => {
     component.identifierControl.setValue('user@example.com');
     component.onIdentifierBlur();
-    expect(component.phoneError()).toBe('');
+    expect(component.emailError()).toBe('');
   });
 
-  it('does not show phone error for a valid phone', () => {
-    component.identifierControl.setValue('2125551234');
-    component.onIdentifierBlur();
-    expect(component.phoneError()).toBe('');
+  it('submits a normalized email magic link request', async () => {
+    component.identifierControl.setValue(' User@Example.COM ');
+    await component.onSubmit();
+
+    expect(mockAuth['signInWithEmail']).toHaveBeenCalledWith('user@example.com');
+    expect(component.state()).toBe('sent');
+    expect(component.sentTo()).toBe('user@example.com');
   });
 
-  describe('successful submission with email', () => {
-    beforeEach(async () => {
-      mockService['signInWithEmail'] = vi.fn().mockResolvedValue(undefined);
-      component.identifierControl.setValue('user@example.com');
-      await component.onSubmit();
-      fixture.detectChanges();
-    });
+  it('does not submit when the identifier is not an email address', async () => {
+    component.identifierControl.setValue('bad-input');
+    await component.onSubmit();
 
-    it('sets state to sent', () => {
-      expect(component.state()).toBe('sent');
-    });
-
-    it('shows the sent message', () => {
-      const h1 = fixture.nativeElement.querySelector('h1') as HTMLElement;
-      expect(h1.textContent?.toLowerCase()).toContain('check');
-    });
-
-    it('calls signInWithEmail with normalized email', () => {
-      expect(mockService['signInWithEmail']).toHaveBeenCalledWith('user@example.com');
-    });
+    expect(component.emailError()).toContain('valid email');
+    expect(mockAuth['signInWithEmail']).not.toHaveBeenCalled();
   });
 
-  describe('successful submission with phone', () => {
-    beforeEach(async () => {
-      mockService['signInWithPhone'] = vi.fn().mockResolvedValue(undefined);
-      component.identifierControl.setValue('2125551234');
-      await component.onSubmit();
-      fixture.detectChanges();
-    });
+  it('surfaces auth errors', async () => {
+    mockAuth['signInWithEmail'] = vi.fn().mockRejectedValue(new Error('Rate limit reached'));
+    component.identifierControl.setValue('user@example.com');
 
-    it('sets state to sent', () => {
-      expect(component.state()).toBe('sent');
-    });
+    await component.onSubmit();
 
-    it('calls signInWithPhone with E.164 phone', () => {
-      expect(mockService['signInWithPhone']).toHaveBeenCalledWith('+12125551234');
-    });
-  });
-
-  describe('submission with invalid phone', () => {
-    beforeEach(async () => {
-      component.identifierControl.setValue('notaphone');
-      await component.onSubmit();
-      fixture.detectChanges();
-    });
-
-    it('sets phoneError', () => {
-      expect(component.phoneError()).toBeTruthy();
-    });
-
-    it('does not call any sign-in method', () => {
-      expect(mockService['signInWithEmail']).not.toHaveBeenCalled();
-      expect(mockService['signInWithPhone']).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('on sign-in error', () => {
-    beforeEach(async () => {
-      mockService['signInWithEmail'] = vi.fn().mockRejectedValue(new Error('Rate limit reached'));
-      component.identifierControl.setValue('user@example.com');
-      await component.onSubmit();
-      fixture.detectChanges();
-    });
-
-    it('sets state to error', () => {
-      expect(component.state()).toBe('error');
-    });
-
-    it('displays the error message', () => {
-      expect(component.errorMessage()).toContain('Rate limit');
-    });
-  });
-
-  it('tryAgain resets state and form', () => {
-    component['state'].set('error');
-    component.tryAgain();
-    expect(component.state()).toBe('idle');
-    expect(component.form.value.identifier).toBeFalsy();
+    expect(component.state()).toBe('error');
+    expect(component.errorMessage()).toContain('Rate limit reached');
   });
 });

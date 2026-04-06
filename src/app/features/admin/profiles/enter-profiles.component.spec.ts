@@ -52,13 +52,13 @@ describe('EnterProfilesComponent', () => {
     component.form.setValue({
       first_name: 'Jane',
       last_name: 'Smith',
-      email: 'jane@example.com',
+      work_email: 'jane@example.com',
     });
     await component.onSubmit();
     expect(mockService['adminCreateProfile']).toHaveBeenCalledWith({
       first_name: 'Jane',
       last_name: 'Smith',
-      email: 'jane@example.com',
+      work_email: 'jane@example.com',
     });
     expect(component.successMessage()).toBeTruthy();
     expect(component.form.value.first_name).toBeFalsy();
@@ -69,7 +69,7 @@ describe('EnterProfilesComponent', () => {
     component.form.setValue({
       first_name: 'Jane',
       last_name: 'Smith',
-      email: 'jane@example.com',
+      work_email: 'jane@example.com',
     });
     await component.onSubmit();
     expect(component.errorMessage()).toContain('DB error');

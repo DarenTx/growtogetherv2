@@ -46,38 +46,36 @@
         </div>
 
         <div class="gt-field">
-          <label class="gt-label" for="email"
-            >Email Address <span aria-hidden="true">*</span></label
+          <label class="gt-label" for="work_email"
+            >Work Email Address <span aria-hidden="true">*</span></label
           >
           <input
-            id="email"
+            id="work_email"
             type="email"
-            formControlName="email"
+            formControlName="work_email"
             autocomplete="email"
             class="gt-input"
           />
-          @if (emailControl.invalid && emailControl.touched) {
-            <span class="gt-field-error field-error">A valid email address is required.</span>
+          @if (workEmailControl.invalid && workEmailControl.touched) {
+            <span class="gt-field-error field-error">A valid work email address is required.</span>
           }
         </div>
 
         <div class="gt-field">
-          <label class="gt-label" for="phone">Phone Number <span aria-hidden="true">*</span></label>
+          <label class="gt-label" for="personal_email"
+            >Personal Email Address <span aria-hidden="true">*</span></label
+          >
           <input
-            id="phone"
-            type="tel"
-            formControlName="phone"
-            autocomplete="tel"
-            (blur)="onPhoneBlur()"
+            id="personal_email"
+            type="email"
+            formControlName="personal_email"
+            autocomplete="email"
             class="gt-input"
           />
-          @if (phoneError()) {
-            <span class="gt-field-error field-error">{{ phoneError() }}</span>
-            <span class="gt-field-hint"
-              >USA: (212) 555-1234 or 2125551234 | International: +44 20 7123 4567</span
+          @if (personalEmailControl.invalid && personalEmailControl.touched) {
+            <span class="gt-field-error field-error"
+              >A valid personal email address is required.</span
             >
-          } @else if (phoneControl.invalid && phoneControl.touched) {
-            <span class="gt-field-error field-error">Phone number is required.</span>
           }
         </div>
 

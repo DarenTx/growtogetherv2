@@ -15,13 +15,16 @@
         </div>
       </div>
     } @else {
-      <!-- ── Sign-in form ── -->
-      <h1 class="gt-page-title">Sign in</h1>
-      <p class="gt-page-subtitle">Enter your email to receive a login link.</p>
+      <!-- ── Sign-in options ── -->
+      <h1 class="gt-page-title">Welcome to Grow Together!</h1>
+      <p class="gt-page-subtitle">Track Progress. Build Futures.</p>
+
+      @if (state() === 'error' && errorMessage()) {
+        <div class="gt-banner gt-banner-error" role="alert">{{ errorMessage() }}</div>
+      }
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="gt-form">
         <div class="gt-field">
-          <label class="gt-label" for="identifier">Email</label>
           <input
             id="identifier"
             type="text"
@@ -31,7 +34,7 @@
             (blur)="onIdentifierBlur()"
             class="gt-input"
             [attr.aria-invalid]="
-              (identifierControl.invalid && identifierControl.touched) || phoneError()
+              (identifierControl.invalid && identifierControl.touched) || emailError()
                 ? 'true'
                 : null
             "
@@ -41,24 +44,18 @@
             <span class="gt-field-error field-error">This field is required.</span>
           }
 
-          @if (phoneError()) {
-            <span class="gt-field-error field-error">{{ phoneError() }}</span>
+          @if (emailError()) {
+            <span class="gt-field-error field-error">{{ emailError() }}</span>
           }
-
-          <p class="gt-help-text">
-            • Email: user&#64;example.com<br />
-            <!--• USA Phone: (212) 555-1234<br />
-            • International: +44 20 7123 4567-->
-          </p>
         </div>
 
-        @if (state() === 'error') {
-          <div class="gt-banner gt-banner-error" role="alert">{{ errorMessage() }}</div>
-        }
-
         <div class="gt-btn-row">
-          <button type="submit" class="gt-btn gt-btn-primary" [disabled]="state() === 'loading'">
-            @if (state() === 'loading') {
+          <button
+            type="submit"
+            class="gt-btn gt-btn-primary"
+            [disabled]="state() === 'magic-link-loading'"
+          >
+            @if (state() === 'magic-link-loading') {
               Sending…
             } @else {
               Send Login Link
@@ -66,6 +63,43 @@
           </button>
         </div>
       </form>
+
+      <div class="gt-or-divider gt-text-center" aria-label="or">
+        <span>OR</span>
+      </div>
+
+      <div class="gt-btn-row gt-google-actions">
+        <button
+          type="button"
+          class="gt-btn gt-google-brand-btn"
+          (click)="continueWithGoogle()"
+          [disabled]="googleInProgress()"
+        >
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            alt=""
+            aria-hidden="true"
+            width="18"
+            height="18"
+            class="gt-google-brand-icon"
+          />
+
+          <span>
+            @if (state() === 'google-loading') {
+              Redirecting to Google…
+            } @else {
+              Continue with Google
+            }
+          </span>
+        </button>
+      </div>
+
+      <p class="gt-legal-links">
+        By continuing, you agree to our
+        <a routerLink="/tos">Terms of Service</a>
+        and
+        <a routerLink="/privacy">Privacy Policy</a>.
+      </p>
     }
   </div>
 </div>

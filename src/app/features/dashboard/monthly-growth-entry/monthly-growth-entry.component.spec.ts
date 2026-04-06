@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthService } from '../../../core/services/auth.service';
 import { GrowthDataService } from '../../../core/services/growth-data.service';
+import { ProfileService } from '../../../core/services/profile.service';
 import {
   createMockAuthService,
   createMockGrowthDataService,
+  createMockProfileService,
 } from '../../../core/testing/mock-supabase.service';
 import { MonthlyGrowthEntryComponent } from './monthly-growth-entry.component';
 
@@ -21,8 +23,25 @@ describe('MonthlyGrowthEntryComponent', () => {
   let mockService: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = { ...createMockAuthService(), ...createMockGrowthDataService() };
+    mockService = {
+      ...createMockAuthService(),
+      ...createMockGrowthDataService(),
+      ...createMockProfileService(),
+    };
     mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
+    mockService['getProfile'] = vi.fn().mockResolvedValue({
+      id: 'user-uuid-123',
+      first_name: 'Test',
+      last_name: 'User',
+      work_email: 'test@example.com',
+      personal_email: 'test.personal@example.com',
+      is_admin: false,
+      work_email_verified: true,
+      personal_email_verified: false,
+      registration_complete: true,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    });
     mockService['getOwnBankNames'] = vi
       .fn()
       .mockResolvedValue(['Fidelity Investments', 'Edward Jones']);
@@ -35,6 +54,7 @@ describe('MonthlyGrowthEntryComponent', () => {
       providers: [
         { provide: AuthService, useValue: mockService },
         { provide: GrowthDataService, useValue: mockService },
+        { provide: ProfileService, useValue: mockService },
       ],
     }).compileComponents();
   });

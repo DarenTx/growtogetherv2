@@ -22,7 +22,7 @@ export class EnterProfilesComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     first_name: ['', Validators.required],
     last_name: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
+    work_email: ['', [Validators.required, Validators.email]],
   });
 
   async ngOnInit(): Promise<void> {
@@ -49,8 +49,8 @@ export class EnterProfilesComponent implements OnInit {
     this.errorMessage.set(null);
 
     try {
-      const { first_name, last_name, email } = this.form.getRawValue();
-      await this.adminService.adminCreateProfile({ first_name, last_name, email });
+      const { first_name, last_name, work_email } = this.form.getRawValue();
+      await this.adminService.adminCreateProfile({ first_name, last_name, work_email });
       this.successMessage.set('Profile created successfully.');
       this.form.reset();
       await this.loadProfiles();

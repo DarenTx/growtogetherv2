@@ -17,8 +17,11 @@ const MOCK_PROFILE = {
   id: 'user-1',
   first_name: 'Jane',
   last_name: 'Doe',
-  email: 'jane@example.com',
+  work_email: 'jane@example.com',
+  personal_email: null,
   is_admin: false,
+  work_email_verified: false,
+  personal_email_verified: false,
   registration_complete: true,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
@@ -56,12 +59,12 @@ describe('AdminService', () => {
       await service.adminCreateProfile({
         first_name: 'Jane',
         last_name: 'Doe',
-        email: 'jane@example.com',
+        work_email: 'jane@example.com',
       });
       expect(mockChain.insert).toHaveBeenCalledWith({
         first_name: 'Jane',
         last_name: 'Doe',
-        email: 'jane@example.com',
+        work_email: 'jane@example.com',
       });
     });
 
@@ -71,7 +74,7 @@ describe('AdminService', () => {
         service.adminCreateProfile({
           first_name: 'Jane',
           last_name: 'Doe',
-          email: 'jane@example.com',
+          work_email: 'jane@example.com',
         }),
       ).rejects.toThrow('Duplicate');
     });

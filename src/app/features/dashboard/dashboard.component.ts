@@ -75,8 +75,8 @@ export class DashboardComponent implements OnInit {
 
   readonly hasPrevMonthData = computed(() => {
     const profile = this.profile();
-    if (!profile?.email) return false;
-    const emailKey = profile.email.toLowerCase();
+    if (!profile?.work_email) return false;
+    const emailKey = profile.work_email.toLowerCase();
     const source = PREV_MONTH_YEAR === CURRENT_YEAR ? this.growthData() : this.prevYearGrowthData();
     return source.some(
       (d) =>
@@ -118,7 +118,7 @@ export class DashboardComponent implements OnInit {
       firstName: p.first_name ?? '',
       lastName: p.last_name ?? '',
       months: Array.from({ length: 12 }, (_, i) => {
-        const key = (p.email ?? '').toLowerCase();
+        const key = (p.work_email ?? '').toLowerCase();
         return lookup.get(key)?.get(i) ?? null;
       }),
     }));
