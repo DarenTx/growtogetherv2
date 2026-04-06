@@ -50,6 +50,7 @@ declare global {
   styleUrl: './login.component.css',
 })
 export class LoginComponent implements OnInit, OnDestroy {
+  readonly googleLoginEnabled = environment.enableGoogleLogin;
   readonly state = signal<LoginState>('idle');
   readonly errorMessage = signal<string>('');
   readonly sentTo = signal<string>('');
@@ -68,6 +69,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    if (!this.googleLoginEnabled) {
+      return;
+    }
+
     void this.startGoogleOneTap();
   }
 
@@ -120,6 +125,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   async continueWithGoogle(): Promise<void> {
+    if (!this.googleLoginEnabled) {
+      return;
+    }
+
     if (this.googleInProgress()) {
       return;
     }
@@ -139,6 +148,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   async startGoogleOneTap(): Promise<void> {
+    if (!this.googleLoginEnabled) {
+      return;
+    }
+
     if (this.googleInProgress()) {
       return;
     }

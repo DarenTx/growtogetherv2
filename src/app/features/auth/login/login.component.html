@@ -47,6 +47,10 @@
           @if (emailError()) {
             <span class="gt-field-error field-error">{{ emailError() }}</span>
           }
+
+          <p class="gt-field-hint">
+            You <i>must</i> use the same email address that receives PRR notifications.
+          </p>
         </div>
 
         <div class="gt-btn-row">
@@ -64,35 +68,37 @@
         </div>
       </form>
 
-      <div class="gt-or-divider gt-text-center" aria-label="or">
-        <span>OR</span>
-      </div>
+      @if (googleLoginEnabled) {
+        <div class="gt-or-divider gt-text-center" aria-label="or">
+          <span>OR</span>
+        </div>
 
-      <div class="gt-btn-row gt-google-actions">
-        <button
-          type="button"
-          class="gt-btn gt-google-brand-btn"
-          (click)="continueWithGoogle()"
-          [disabled]="googleInProgress()"
-        >
-          <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            alt=""
-            aria-hidden="true"
-            width="18"
-            height="18"
-            class="gt-google-brand-icon"
-          />
+        <div class="gt-btn-row gt-google-actions">
+          <button
+            type="button"
+            class="gt-btn gt-google-brand-btn"
+            (click)="continueWithGoogle()"
+            [disabled]="googleInProgress()"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt=""
+              aria-hidden="true"
+              width="18"
+              height="18"
+              class="gt-google-brand-icon"
+            />
 
-          <span>
-            @if (state() === 'google-loading') {
-              Redirecting to Google…
-            } @else {
-              Continue with Google
-            }
-          </span>
-        </button>
-      </div>
+            <span>
+              @if (state() === 'google-loading') {
+                Redirecting to Google…
+              } @else {
+                Continue with Google
+              }
+            </span>
+          </button>
+        </div>
+      }
 
       <p class="gt-legal-links">
         By continuing, you agree to our

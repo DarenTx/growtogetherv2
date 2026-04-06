@@ -359,7 +359,7 @@ export class AuditLogComponent implements OnInit {
 
 ### 10.1 Page Title
 
-The visible page heading is `<h1 class="gt-page-title">Activity Log</h1>`, consistent with how other pages in the application title themselves (e.g. "Enter Profiles", "Growth Dashboard 2026"). No component in this application sets the browser `<title>` tag — the tab always reads "GrowTogether" from `index.html`, which is the established convention.
+The visible page heading is `<h1 class="gt-page-title">Activity Log</h1>`, consistent with how other pages in the application title themselves (e.g. "Enter Profiles", "Growth Dashboard 2026"). No component in this application sets the browser `<title>` tag — the tab always reads "Grow Together" from `index.html`, which is the established convention.
 
 ### 10.2 Existing Global Classes (no action needed)
 
