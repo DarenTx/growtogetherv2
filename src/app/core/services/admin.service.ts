@@ -30,14 +30,14 @@ export class AdminService {
   async adminCreateProfile(profileData: {
     first_name: string;
     last_name: string;
-    email: string;
+    work_email: string;
   }): Promise<void> {
-    this.logger.info('Admin creating profile for', profileData.email);
+    this.logger.info('Admin creating profile for', profileData.work_email);
     const { error } = await this.client.from('profiles').insert(profileData);
     if (error) {
       this.logger.error('adminCreateProfile failed', error);
       throw error;
     }
-    this.logger.info('Profile created successfully for', profileData.email);
+    this.logger.info('Profile created successfully for', profileData.work_email);
   }
 }

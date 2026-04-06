@@ -12,6 +12,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Session } from '@supabase/supabase-js';
 import { AuthService } from '../../../core/services/auth.service';
 import { GrowthDataService } from '../../../core/services/growth-data.service';
+import { ProfileService } from '../../../core/services/profile.service';
 
 @Component({
   selector: 'app-monthly-growth-entry',
@@ -24,6 +25,7 @@ import { GrowthDataService } from '../../../core/services/growth-data.service';
 export class MonthlyGrowthEntryComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly growthDataService = inject(GrowthDataService);
+  private readonly profileService = inject(ProfileService);
   private readonly destroyRef = inject(DestroyRef);
 
   // Private state
@@ -131,11 +133,10 @@ export class MonthlyGrowthEntryComponent implements OnInit {
       }
     }
 
-    const userEmail = this.session?.user.email;
+    const userEmail =
+      (await this.profileService.getProfile())?.work_email ?? this.session?.user.email;
     if (!userEmail) {
-      this.errorMessage.set(
-        'Growth data requires an email address. Phone-only accounts cannot use this feature.',
-      );
+      this.errorMessage.set('Growth data requires a work email address on your profile.');
       return;
     }
 

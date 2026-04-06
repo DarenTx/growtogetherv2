@@ -1,12 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { GrowthData, PersonBankEntry } from '../models/growth-data.interface';
 import { AuthService } from './auth.service';
+import { ProfileService } from './profile.service';
 import { SUPABASE_CLIENT_TOKEN } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class GrowthDataService {
   private readonly client = inject(SUPABASE_CLIENT_TOKEN);
   private readonly auth = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
   private readonly logger = {
     debug: (msg: string, ...args: unknown[]) =>
       console.debug(`[GrowthDataService] ${msg}`, ...args),
@@ -51,15 +53,11 @@ export class GrowthDataService {
       return null;
     }
 
-    const email = session.user.email;
-    if (!email) {
-      this.logger.warn(
-        'getOwnGrowthDataForMonth: user has no email (phone-auth only); cannot look up by email_key',
-      );
+    const emailKey = await this.getCurrentEmailKey();
+    if (!emailKey) {
+      this.logger.warn('getOwnGrowthDataForMonth: current user has no work email');
       return null;
     }
-
-    const emailKey = email.toLowerCase();
     const { data, error } = await this.client
       .from('growth_data')
       .select('*')
@@ -251,11 +249,9 @@ export class GrowthDataService {
       return [];
     }
 
-    const email = session.user.email;
-    if (!email) {
-      this.logger.warn(
-        'getOwnBankNames: user has no email (phone-auth only); cannot look up by email_key',
-      );
+    const emailKey = await this.getCurrentEmailKey();
+    if (!emailKey) {
+      this.logger.warn('getOwnBankNames: current user has no work email');
       return [];
     }
 
@@ -264,7 +260,7 @@ export class GrowthDataService {
     const { data, error } = await this.client
       .from('growth_data')
       .select('bank_name')
-      .eq('email_key', email.toLowerCase())
+      .eq('email_key', emailKey)
       .order('bank_name');
 
     if (error) {
@@ -275,6 +271,17 @@ export class GrowthDataService {
     const names = [...new Set((data ?? []).map((r: { bank_name: string }) => r.bank_name))];
     this.logger.debug(`Found ${names.length} distinct bank names`);
     return names;
+  }
+
+  private async getCurrentEmailKey(): Promise<string | null> {
+    const session = await this.auth.getSession();
+    if (!session) {
+      return null;
+    }
+
+    const profile = await this.profileService.getProfile();
+    const emailKey = profile?.work_email ?? session.user.email ?? null;
+    return emailKey ? emailKey.toLowerCase() : null;
   }
 
   async getGrowthDataForUserYear(userId: string, year: number): Promise<GrowthData[]> {

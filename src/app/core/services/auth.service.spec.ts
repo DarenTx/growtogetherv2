@@ -75,19 +75,6 @@ describe('AuthService', () => {
     });
   });
 
-  describe('signInWithPhone', () => {
-    it('calls signInWithOtp with the provided phone', async () => {
-      mockSignInWithOtp.mockResolvedValue({ error: null });
-      await service.signInWithPhone('+12125551234');
-      expect(mockSignInWithOtp).toHaveBeenCalledWith({ phone: '+12125551234' });
-    });
-
-    it('throws on error', async () => {
-      mockSignInWithOtp.mockResolvedValue({ error: new Error('Invalid phone') });
-      await expect(service.signInWithPhone('+12125551234')).rejects.toThrow('Invalid phone');
-    });
-  });
-
   describe('signInWithGooglePopup', () => {
     it('opens popup when Supabase returns OAuth URL', async () => {
       mockSignInWithOAuth.mockResolvedValue({

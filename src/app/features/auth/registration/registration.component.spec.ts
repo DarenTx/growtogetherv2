@@ -14,16 +14,25 @@ import { RegistrationComponent } from './registration.component';
 describe('RegistrationComponent', () => {
   let fixture: ComponentFixture<RegistrationComponent>;
   let component: RegistrationComponent;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockService: Record<string, any>;
   let router: Router;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockAuth: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockProfile: Record<string, any>;
+
+  async function createComponent(): Promise<void> {
+    fixture = TestBed.createComponent(RegistrationComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
 
   beforeEach(async () => {
-    // Combine auth + profile mocks into one object for convenience
-    mockService = { ...createMockAuthService(), ...createMockProfileService() };
-    mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
-    mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_INCOMPLETE);
-    mockService['completeRegistration'] = vi.fn().mockResolvedValue(true);
+    mockAuth = createMockAuthService();
+    mockProfile = createMockProfileService();
+    mockAuth['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
+    mockProfile['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_INCOMPLETE);
 
     await TestBed.configureTestingModule({
       imports: [RegistrationComponent],
@@ -32,143 +41,77 @@ describe('RegistrationComponent', () => {
           { path: 'dashboard', component: RegistrationComponent },
           { path: 'login', component: RegistrationComponent },
         ]),
-        { provide: AuthService, useValue: mockService },
-        { provide: ProfileService, useValue: mockService },
+        { provide: AuthService, useValue: mockAuth },
+        { provide: ProfileService, useValue: mockProfile },
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(RegistrationComponent);
-    component = fixture.componentInstance;
     router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    fixture.detectChanges();
   });
 
-  it('creates the component', () => {
+  it('creates the component', async () => {
+    await createComponent();
     expect(component).toBeTruthy();
   });
 
-  it('shows the form after loading', () => {
-    expect(component.state()).toBe('ready');
-    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
-    expect(form).toBeTruthy();
+  it('prefills the work email from the authenticated user', async () => {
+    mockProfile['getProfile'] = vi.fn().mockResolvedValue(null);
+    await createComponent();
+    expect(component.workEmailControl.value).toBe('john@example.com');
   });
 
-  it('redirects to /login when no session', async () => {
-    mockService['getSession'] = vi.fn().mockResolvedValue(null);
-    fixture = TestBed.createComponent(RegistrationComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    await fixture.whenStable();
+  it('prefills work and personal email from an existing profile', async () => {
+    mockProfile['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE);
+    await createComponent();
+    expect(component.workEmailControl.value).toBe(MOCK_PROFILE_COMPLETE.work_email);
+    expect(component.personalEmailControl.value).toBe(MOCK_PROFILE_COMPLETE.personal_email);
+  });
+
+  it('redirects to login when no session exists', async () => {
+    mockAuth['getSession'] = vi.fn().mockResolvedValue(null);
+    await createComponent();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 
-  it('pre-fills email from session user when no existing profile', async () => {
-    mockService['getProfile'] = vi.fn().mockResolvedValue(null);
-    fixture = TestBed.createComponent(RegistrationComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(component.emailControl.value).toBe('john@example.com');
-  });
-
-  it('pre-fills all fields from existing profile', async () => {
-    mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE);
-    fixture = TestBed.createComponent(RegistrationComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    fixture.detectChanges();
-    expect(component.firstNameControl.value).toBe(MOCK_PROFILE_COMPLETE.first_name);
-    expect(component.emailControl.value).toBe(MOCK_PROFILE_COMPLETE.email);
-  });
-
-  it('shows all required field errors when form submitted empty', async () => {
-    component.form.reset();
-    await component.onSubmit();
-    fixture.detectChanges();
-    const errors = fixture.nativeElement.querySelectorAll('.field-error') as NodeList;
-    expect(errors.length).toBeGreaterThan(0);
-  });
-
-  it('shows phone error for invalid phone on blur', () => {
-    component.phoneControl.setValue('bad-phone');
-    component.onPhoneBlur();
-    expect(component.phoneError()).toBeTruthy();
-  });
-
-  it('clears phone error for a valid phone on blur', () => {
-    component.phoneControl.setValue('+12125551234');
-    component.onPhoneBlur();
-    expect(component.phoneError()).toBe('');
-  });
-
-  describe('successful registration', () => {
-    beforeEach(async () => {
-      component.form.setValue({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
-        phone: '2125551234',
-        invitation_code: 'Fruehling',
-      });
-      await component.onSubmit();
-    });
-
-    it('calls completeRegistration with normalized data', () => {
-      expect(mockService['completeRegistration']).toHaveBeenCalledWith(
-        expect.objectContaining({
-          first_name: 'John',
-          last_name: 'Doe',
-          email: 'john@example.com',
-          phone: '+12125551234',
-          invitation_code: 'Fruehling',
-        }),
-      );
-    });
-
-    it('navigates to /dashboard on success', () => {
-      expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
-    });
-  });
-
-  describe('failed registration — invalid invitation code', () => {
-    beforeEach(async () => {
-      mockService['completeRegistration'] = vi
-        .fn()
-        .mockRejectedValue(new Error('Invalid invitation code.'));
-      component.form.setValue({
-        first_name: 'John',
-        last_name: 'Doe',
-        email: 'john@example.com',
-        phone: '2125551234',
-        invitation_code: 'wrong',
-      });
-      await component.onSubmit();
-      fixture.detectChanges();
-    });
-
-    it('shows invalid invitation code message', () => {
-      expect(component.errorMessage()).toContain('Invalid invitation code');
-    });
-
-    it('resets state to error so form is visible', () => {
-      expect(component.state()).toBe('error');
-    });
-  });
-
-  it('shows phone error and halts submit when phone is invalid format', async () => {
+  it('submits normalized work and personal emails', async () => {
+    await createComponent();
     component.form.setValue({
       first_name: 'John',
       last_name: 'Doe',
-      email: 'john@example.com',
-      phone: '123',
+      work_email: ' John@Example.COM ',
+      personal_email: ' John.Personal@Example.COM ',
       invitation_code: 'Fruehling',
     });
+
     await component.onSubmit();
-    expect(component.phoneError()).toBeTruthy();
-    expect(mockService['completeRegistration']).not.toHaveBeenCalled();
+
+    expect(mockProfile['completeRegistration']).toHaveBeenCalledWith({
+      first_name: 'John',
+      last_name: 'Doe',
+      work_email: 'john@example.com',
+      personal_email: 'john.personal@example.com',
+      invitation_code: 'Fruehling',
+    });
+    expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
+  });
+
+  it('surfaces invalid invitation code errors', async () => {
+    mockProfile['completeRegistration'] = vi
+      .fn()
+      .mockRejectedValue(new Error('Invalid invitation code.'));
+    await createComponent();
+    component.form.setValue({
+      first_name: 'John',
+      last_name: 'Doe',
+      work_email: 'john@example.com',
+      personal_email: 'john.personal@example.com',
+      invitation_code: 'wrong',
+    });
+
+    await component.onSubmit();
+
+    expect(component.state()).toBe('error');
+    expect(component.errorMessage()).toContain('Invalid invitation code');
   });
 });

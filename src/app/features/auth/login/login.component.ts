@@ -3,12 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
-import {
-  isEmail,
-  isValidPhone,
-  normalizeEmail,
-  normalizeToE164,
-} from '../../../core/utils/phone.utils';
+import { isEmail, normalizeEmail } from '../../../core/utils/email.utils';
 import { environment } from '../../../../environments/environment';
 
 type LoginState = 'idle' | 'google-loading' | 'magic-link-loading' | 'sent' | 'error';
@@ -58,7 +53,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   readonly state = signal<LoginState>('idle');
   readonly errorMessage = signal<string>('');
   readonly sentTo = signal<string>('');
-  readonly phoneError = signal<string>('');
+  readonly emailError = signal<string>('');
   readonly googleInProgress = signal<boolean>(false);
   readonly oneTapReady = signal<boolean>(false);
 
@@ -85,13 +80,13 @@ export class LoginComponent implements OnInit, OnDestroy {
   onIdentifierBlur(): void {
     const value = this.identifierControl.value as string;
     if (!value?.trim()) {
-      this.phoneError.set('');
+      this.emailError.set('');
       return;
     }
-    if (!isEmail(value) && !isValidPhone(value)) {
-      this.phoneError.set('Invalid phone number. Please enter a valid phone number.');
+    if (!isEmail(value)) {
+      this.emailError.set('Please enter a valid email address.');
     } else {
-      this.phoneError.set('');
+      this.emailError.set('');
     }
   }
 
@@ -102,27 +97,21 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
 
     const rawValue = (this.identifierControl.value as string).trim();
-    this.phoneError.set('');
+    this.emailError.set('');
     this.state.set('magic-link-loading');
     this.errorMessage.set('');
 
     try {
-      if (isEmail(rawValue)) {
-        const email = normalizeEmail(rawValue);
-        await this.auth.signInWithEmail(email);
-        this.sentTo.set(email);
-        this.state.set('sent');
-      } else {
-        const e164 = normalizeToE164(rawValue);
-        if (!e164) {
-          this.phoneError.set('Invalid phone number. Please enter a valid phone number.');
-          this.state.set('idle');
-          return;
-        }
-        await this.auth.signInWithPhone(e164);
-        this.sentTo.set(e164);
-        this.state.set('sent');
+      if (!isEmail(rawValue)) {
+        this.emailError.set('Please enter a valid email address.');
+        this.state.set('idle');
+        return;
       }
+
+      const email = normalizeEmail(rawValue);
+      await this.auth.signInWithEmail(email);
+      this.sentTo.set(email);
+      this.state.set('sent');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
       this.errorMessage.set(message);

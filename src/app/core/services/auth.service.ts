@@ -109,16 +109,6 @@ export class AuthService {
     }
   }
 
-  async signInWithPhone(phone: string): Promise<void> {
-    this.logger.info('Sending OTP to phone', phone);
-    const { error } = await this.client.auth.signInWithOtp({ phone });
-    if (error) {
-      this.logger.error('signInWithPhone failed', error);
-      throw error;
-    }
-    this.logger.info('Phone OTP sent successfully');
-  }
-
   async signOut(): Promise<void> {
     this.logger.info('Signing out');
     const { error } = await this.client.auth.signOut();

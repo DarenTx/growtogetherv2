@@ -34,7 +34,7 @@
             (blur)="onIdentifierBlur()"
             class="gt-input"
             [attr.aria-invalid]="
-              (identifierControl.invalid && identifierControl.touched) || phoneError()
+              (identifierControl.invalid && identifierControl.touched) || emailError()
                 ? 'true'
                 : null
             "
@@ -44,8 +44,8 @@
             <span class="gt-field-error field-error">This field is required.</span>
           }
 
-          @if (phoneError()) {
-            <span class="gt-field-error field-error">{{ phoneError() }}</span>
+          @if (emailError()) {
+            <span class="gt-field-error field-error">{{ emailError() }}</span>
           }
         </div>
 

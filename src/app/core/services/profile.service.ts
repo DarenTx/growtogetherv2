@@ -42,12 +42,12 @@ export class ProfileService {
   }
 
   async completeRegistration(data: RegistrationData): Promise<boolean> {
-    this.logger.info('Completing registration for', data.email);
+    this.logger.info('Completing registration for', data.work_email);
     const { data: result, error } = await this.client.rpc('complete_registration', {
       p_first_name: data.first_name,
       p_last_name: data.last_name,
-      p_phone: data.phone,
-      p_email: data.email,
+      p_work_email: data.work_email,
+      p_personal_email: data.personal_email,
       p_invitation_code: data.invitation_code,
     });
     if (error) {

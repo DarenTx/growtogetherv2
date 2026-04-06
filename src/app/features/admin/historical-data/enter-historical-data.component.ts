@@ -73,8 +73,8 @@ export class EnterHistoricalDataComponent implements OnInit {
     this.selectedProfile.set(profile);
     this.form.controls.profile_id.setValue(profileId);
 
-    if (profile?.email) {
-      const data = await this.growthDataService.getGrowthDataByEmailKey(profile.email);
+    if (profile?.work_email) {
+      const data = await this.growthDataService.getGrowthDataByEmailKey(profile.work_email);
       this.growthData.set(data);
     } else {
       this.growthData.set([]);
@@ -93,7 +93,7 @@ export class EnterHistoricalDataComponent implements OnInit {
 
     const { profile_id, year, month, bank_name, growth_pct } = this.form.getRawValue();
     const profile = this.profiles().find((p) => p.id === profile_id) ?? null;
-    const email_key = profile?.email ?? '';
+    const email_key = profile?.work_email ?? '';
 
     try {
       await this.growthDataService.saveGrowthData({

@@ -2,7 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Profile } from '../../../core/models/profile.interface';
-import { isValidPhone, normalizeEmail, normalizeToE164 } from '../../../core/utils/phone.utils';
+import { normalizeEmail } from '../../../core/utils/email.utils';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
 
@@ -18,13 +18,12 @@ type RegistrationState = 'loading' | 'ready' | 'submitting' | 'error';
 export class RegistrationComponent implements OnInit {
   readonly state = signal<RegistrationState>('loading');
   readonly errorMessage = signal<string>('');
-  readonly phoneError = signal<string>('');
 
   readonly form = new FormGroup({
     first_name: new FormControl('', [Validators.required]),
     last_name: new FormControl('', [Validators.required]),
-    email: new FormControl('', [Validators.required, Validators.email]),
-    phone: new FormControl('', [Validators.required]),
+    work_email: new FormControl('', [Validators.required, Validators.email]),
+    personal_email: new FormControl('', [Validators.required, Validators.email]),
     invitation_code: new FormControl('', [Validators.required]),
   });
 
@@ -42,11 +41,11 @@ export class RegistrationComponent implements OnInit {
   get lastNameControl(): FormControl {
     return this.form.get('last_name') as FormControl;
   }
-  get emailControl(): FormControl {
-    return this.form.get('email') as FormControl;
+  get workEmailControl(): FormControl {
+    return this.form.get('work_email') as FormControl;
   }
-  get phoneControl(): FormControl {
-    return this.form.get('phone') as FormControl;
+  get personalEmailControl(): FormControl {
+    return this.form.get('personal_email') as FormControl;
   }
   get invitationCodeControl(): FormControl {
     return this.form.get('invitation_code') as FormControl;
@@ -69,46 +68,25 @@ export class RegistrationComponent implements OnInit {
     }
   }
 
-  private preFillForm(user: { email?: string; phone?: string }): void {
+  private preFillForm(user: { email?: string }): void {
     if (this.existingProfile) {
       this.form.patchValue({
         first_name: this.existingProfile.first_name ?? '',
         last_name: this.existingProfile.last_name ?? '',
-        email: this.existingProfile.email ?? user.email ?? '',
-        phone: this.existingProfile.phone ?? user.phone ?? '',
+        work_email: this.existingProfile.work_email ?? user.email ?? '',
+        personal_email: this.existingProfile.personal_email ?? '',
       });
     } else {
-      // New user: pre-fill only the identifier used to authenticate
+      // New user: pre-fill the work email from the authenticated account.
       this.form.patchValue({
-        email: user.email ?? '',
-        phone: user.phone ?? '',
+        work_email: user.email ?? '',
       });
-    }
-  }
-
-  onPhoneBlur(): void {
-    const value = this.phoneControl.value as string;
-    if (!value?.trim()) {
-      this.phoneError.set('');
-      return;
-    }
-    if (!isValidPhone(value)) {
-      this.phoneError.set('Invalid phone number. Please enter a valid phone number.');
-    } else {
-      this.phoneError.set('');
     }
   }
 
   async onSubmit(): Promise<void> {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
-
-    const rawPhone = this.phoneControl.value as string;
-    const e164Phone = normalizeToE164(rawPhone);
-    if (!e164Phone) {
-      this.phoneError.set('Invalid phone number. Please enter a valid phone number.');
-      return;
-    }
 
     this.state.set('submitting');
     this.errorMessage.set('');
@@ -117,8 +95,8 @@ export class RegistrationComponent implements OnInit {
       await this.profileService.completeRegistration({
         first_name: (this.firstNameControl.value as string).trim(),
         last_name: (this.lastNameControl.value as string).trim(),
-        email: normalizeEmail(this.emailControl.value as string),
-        phone: e164Phone,
+        work_email: normalizeEmail(this.workEmailControl.value as string),
+        personal_email: normalizeEmail(this.personalEmailControl.value as string),
         invitation_code: (this.invitationCodeControl.value as string).trim(),
       });
 

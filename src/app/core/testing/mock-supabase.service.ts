@@ -1,7 +1,7 @@
 // ─── Shared constants ─────────────────────────────────────────────────────────
 
 export const MOCK_SESSION = {
-  user: { id: 'user-uuid-1', email: 'john@example.com', phone: '+12125551234' },
+  user: { id: 'user-uuid-1', email: 'john@example.com' },
   access_token: 'mock-token',
 };
 
@@ -9,11 +9,11 @@ export const MOCK_PROFILE_COMPLETE = {
   id: 'user-uuid-1',
   first_name: 'John',
   last_name: 'Doe',
-  email: 'john@example.com',
-  phone: '+12125551234',
+  work_email: 'john@example.com',
+  personal_email: 'john.personal@example.com',
   is_admin: false,
-  email_verified: true,
-  phone_verified: false,
+  work_email_verified: true,
+  personal_email_verified: false,
   registration_complete: true,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
@@ -40,7 +40,6 @@ export function createMockAuthService(): Record<string, any> {
     signInWithGooglePopup: vi.fn().mockResolvedValue(undefined),
     signInWithGoogleIdToken: vi.fn().mockResolvedValue(undefined),
     signInWithEmail: vi.fn().mockResolvedValue(undefined),
-    signInWithPhone: vi.fn().mockResolvedValue(undefined),
     signOut: vi.fn().mockResolvedValue(undefined),
     onAuthStateChange: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
     authCallbackUrl: 'http://localhost/auth/callback',

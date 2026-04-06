@@ -148,8 +148,8 @@ export class ClassicScorecardComponent implements OnInit {
   readonly userRank = computed((): number | null => {
     const map = this.perUserMonthData();
     const profile = this.viewedUserProfile();
-    if (!profile?.email) return null;
-    const emailKey = profile.email.toLowerCase();
+    if (!profile?.work_email) return null;
+    const emailKey = profile.work_email.toLowerCase();
     if (!map.has(emailKey)) return null;
 
     const userPct = map.get(emailKey)!;

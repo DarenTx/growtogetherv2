@@ -43,20 +43,20 @@
       </div>
 
       <div class="gt-field">
-        <label class="gt-label" for="email">Email</label>
+        <label class="gt-label" for="work_email">Work Email</label>
         <input
-          id="email"
+          id="work_email"
           type="email"
-          formControlName="email"
+          formControlName="work_email"
           autocomplete="email"
           aria-required="true"
           class="gt-input"
-          [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched"
+          [attr.aria-invalid]="form.controls.work_email.invalid && form.controls.work_email.touched"
         />
-        @if (form.controls.email.touched) {
-          @if (form.controls.email.hasError('required')) {
-            <p class="gt-field-error" role="alert">Email is required.</p>
-          } @else if (form.controls.email.hasError('email')) {
+        @if (form.controls.work_email.touched) {
+          @if (form.controls.work_email.hasError('required')) {
+            <p class="gt-field-error" role="alert">Work email is required.</p>
+          } @else if (form.controls.work_email.hasError('email')) {
             <p class="gt-field-error" role="alert">Please enter a valid email address.</p>
           }
         }
@@ -85,12 +85,12 @@
     <div class="gt-list">
       <div class="gt-list-header">
         <span>Name</span>
-        <span>Email</span>
+        <span>Work Email</span>
       </div>
       @for (p of profiles(); track p.id) {
         <div class="gt-list-row">
           <span>{{ p.first_name }} {{ p.last_name }}</span>
-          <span class="gt-text-muted">{{ p.email }}</span>
+          <span class="gt-text-muted">{{ p.work_email }}</span>
         </div>
       }
     </div>

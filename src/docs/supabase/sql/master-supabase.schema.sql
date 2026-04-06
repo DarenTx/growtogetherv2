@@ -790,11 +790,12 @@ ALTER FUNCTION pgbouncer.get_auth(p_usename text) OWNER TO supabase_admin;
 -- Name: complete_registration(text, text, text, text, text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text) RETURNS boolean
+CREATE FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text) RETURNS boolean
     LANGUAGE plpgsql SECURITY DEFINER
     AS $$
 DECLARE 
-    v_email TEXT;
+    v_work_email TEXT;
+    v_personal_email TEXT;
     v_claimed_count INTEGER;
 BEGIN
     -- Validate invitation code
@@ -802,16 +803,18 @@ BEGIN
         RAISE EXCEPTION 'Invalid invitation code.'; 
     END IF;
     
-    -- Get the email to use for matching (normalize to lowercase)
-    SELECT COALESCE(profiles.email, LOWER(TRIM(p_email))) INTO v_email 
+    -- Get the work email to use for matching historical growth data.
+    SELECT COALESCE(profiles.work_email, LOWER(TRIM(p_work_email))) INTO v_work_email 
     FROM public.profiles 
     WHERE id = auth.uid();
+
+    v_personal_email := LOWER(TRIM(p_personal_email));
     
     -- Lock and claim growth_data rows atomically
     WITH claimed_rows AS (
         UPDATE public.growth_data 
         SET user_id = auth.uid() 
-        WHERE email_key = v_email 
+                WHERE email_key = v_work_email 
           AND user_id IS NULL
         RETURNING id
     )
@@ -822,8 +825,13 @@ BEGIN
     SET 
         first_name = p_first_name, 
         last_name = p_last_name, 
-        phone = COALESCE(profiles.phone, p_phone), 
-        email = v_email, 
+        work_email = v_work_email,
+        personal_email = v_personal_email,
+        personal_email_verified = CASE
+            WHEN profiles.personal_email IS NOT DISTINCT FROM v_personal_email
+                THEN COALESCE(profiles.personal_email_verified, false)
+            ELSE false
+        END,
         registration_complete = true
     WHERE id = auth.uid();
     
@@ -832,7 +840,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text) OWNER TO postgres;
+ALTER FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text) OWNER TO postgres;
 
 --
 -- Name: get_audit_log_page(integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
@@ -880,9 +888,9 @@ BEGIN
     -- ON CONFLICT handles the case where an admin pre-created a profile stub
     -- with the same email before the user signed up. The id is updated to
     -- auth.users.id so the profile becomes properly linked to the auth record.
-    INSERT INTO public.profiles (id, email, phone)
-    VALUES (new.id, LOWER(TRIM(new.email)), new.phone)
-    ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id;
+    INSERT INTO public.profiles (id, work_email)
+    VALUES (new.id, LOWER(TRIM(new.email)))
+    ON CONFLICT (work_email) DO UPDATE SET id = EXCLUDED.id;
     RETURN new;
 END;
 $$;
@@ -976,10 +984,8 @@ CREATE FUNCTION public.sync_verification_status() RETURNS trigger
 BEGIN
     UPDATE public.profiles 
     SET 
-        email_verified = (new.email_confirmed_at IS NOT NULL), 
-        phone_verified = (new.phone_confirmed_at IS NOT NULL), 
-        email = COALESCE(LOWER(TRIM(new.email)), profiles.email), 
-        phone = COALESCE(new.phone, profiles.phone) 
+        work_email_verified = (new.email_confirmed_at IS NOT NULL), 
+        work_email = COALESCE(LOWER(TRIM(new.email)), profiles.work_email)
     WHERE id = new.id;
     RETURN new;
 END;
@@ -3306,16 +3312,16 @@ CREATE TABLE public.profiles (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     first_name text,
     last_name text,
-    email text,
-    phone text,
-    email_verified boolean DEFAULT false,
-    phone_verified boolean DEFAULT false,
+    work_email text,
+    personal_email text,
+    work_email_verified boolean DEFAULT false,
+    personal_email_verified boolean DEFAULT false,
     registration_complete boolean DEFAULT false,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     is_admin boolean DEFAULT false,
-    CONSTRAINT profiles_email_format_check CHECK ((email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text)),
-    CONSTRAINT profiles_phone_format_check CHECK ((phone ~ '^\+[1-9]\d{1,14}$'::text))
+    CONSTRAINT profiles_personal_email_format_check CHECK (((personal_email IS NULL) OR (personal_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text))),
+    CONSTRAINT profiles_work_email_format_check CHECK (((work_email IS NULL) OR (work_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'::text)))
 );
 
 
@@ -3843,27 +3849,19 @@ ALTER TABLE ONLY public.market_indexes
 
 
 --
--- Name: profiles profiles_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.profiles
-    ADD CONSTRAINT profiles_email_key UNIQUE (email);
-
-
---
--- Name: profiles profiles_phone_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.profiles
-    ADD CONSTRAINT profiles_phone_key UNIQUE (phone);
-
-
---
 -- Name: profiles profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.profiles
     ADD CONSTRAINT profiles_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: profiles profiles_work_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.profiles
+    ADD CONSTRAINT profiles_work_email_key UNIQUE (work_email);
 
 
 --
@@ -5587,12 +5585,12 @@ GRANT ALL ON FUNCTION pgbouncer.get_auth(p_usename text) TO pgbouncer;
 
 
 --
--- Name: FUNCTION complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text); Type: ACL; Schema: public; Owner: postgres
+-- Name: FUNCTION complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text) TO anon;
-GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text) TO authenticated;
-GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text) TO service_role;
+GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text) TO anon;
+GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text) TO authenticated;
+GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text) TO service_role;
 
 
 --

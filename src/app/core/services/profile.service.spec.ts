@@ -30,8 +30,11 @@ const MOCK_PROFILE = {
   id: 'user-uuid-1',
   first_name: 'John',
   last_name: 'Doe',
-  email: 'john@example.com',
+  work_email: 'john@example.com',
+  personal_email: 'john.personal@example.com',
   is_admin: false,
+  work_email_verified: true,
+  personal_email_verified: false,
   registration_complete: true,
 };
 
@@ -91,14 +94,18 @@ describe('ProfileService', () => {
       const result = await service.completeRegistration({
         first_name: 'John',
         last_name: 'Doe',
-        email: 'john@example.com',
-        phone: '+12125551234',
+        work_email: 'john@example.com',
+        personal_email: 'john.personal@example.com',
         invitation_code: 'Fruehling',
       });
       expect(result).toBe(true);
       expect(mockRpc).toHaveBeenCalledWith(
         'complete_registration',
-        expect.objectContaining({ p_invitation_code: 'Fruehling' }),
+        expect.objectContaining({
+          p_work_email: 'john@example.com',
+          p_personal_email: 'john.personal@example.com',
+          p_invitation_code: 'Fruehling',
+        }),
       );
     });
 
@@ -108,8 +115,8 @@ describe('ProfileService', () => {
         service.completeRegistration({
           first_name: 'John',
           last_name: 'Doe',
-          email: 'john@example.com',
-          phone: '+12125551234',
+          work_email: 'john@example.com',
+          personal_email: 'john.personal@example.com',
           invitation_code: 'wrong',
         }),
       ).rejects.toThrow('Invalid invitation code.');

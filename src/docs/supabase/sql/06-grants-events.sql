@@ -611,12 +611,12 @@ GRANT ALL ON FUNCTION pgbouncer.get_auth(p_usename text) TO pgbouncer;
 
 
 --
--- Name: FUNCTION complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text); Type: ACL; Schema: public; Owner: postgres
+-- Name: FUNCTION complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text) TO anon;
-GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text) TO authenticated;
-GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_phone text, p_email text, p_invitation_code text) TO service_role;
+GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text) TO anon;
+GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text) TO authenticated;
+GRANT ALL ON FUNCTION public.complete_registration(p_first_name text, p_last_name text, p_work_email text, p_personal_email text, p_invitation_code text) TO service_role;
 
 
 --
