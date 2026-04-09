@@ -158,12 +158,10 @@ export class ClassicScorecardComponent implements OnInit {
         ? r.user_id
         : (personalEmailToProfileId.get(r.email_key.toLowerCase()) ??
           workEmailToProfileId.get(r.email_key.toLowerCase()));
-      if (!profileId) {
-        continue;
-      }
+      const resolvedKey = profileId ?? `email:${r.email_key.toLowerCase()}`;
 
-      if (!result.has(profileId)) {
-        result.set(profileId, r.growth_pct);
+      if (!result.has(resolvedKey)) {
+        result.set(resolvedKey, r.growth_pct);
       }
     }
     return result;
