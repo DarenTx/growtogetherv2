@@ -75,14 +75,11 @@ export class DashboardComponent implements OnInit {
 
   readonly hasPrevMonthData = computed(() => {
     const profile = this.profile();
-    if (!profile?.work_email) return false;
-    const emailKey = profile.work_email.toLowerCase();
+    if (!profile?.id) return false;
+    const userId = profile.id;
     const source = PREV_MONTH_YEAR === CURRENT_YEAR ? this.growthData() : this.prevYearGrowthData();
     return source.some(
-      (d) =>
-        d.email_key.toLowerCase() === emailKey &&
-        d.year === PREV_MONTH_YEAR &&
-        d.month === PREV_MONTH,
+      (d) => d.user_id === userId && d.year === PREV_MONTH_YEAR && d.month === PREV_MONTH,
     );
   });
 
@@ -103,10 +100,11 @@ export class DashboardComponent implements OnInit {
     const profiles = this.allProfiles();
     const growthData = this.growthData();
 
-    // Build lookup: lowercased email_key → month index (0-based) → first growth_pct seen
+    // Build lookup: user_id → month index (0-based) → first growth_pct seen
     const lookup = new Map<string, Map<number, number>>();
     for (const gd of growthData) {
-      const key = gd.email_key.toLowerCase();
+      const key = gd.user_id;
+      if (!key) continue;
       if (!lookup.has(key)) lookup.set(key, new Map<number, number>());
       const monthMap = lookup.get(key)!;
       const idx = gd.month - 1; // convert 1-based month to 0-based index
@@ -118,7 +116,7 @@ export class DashboardComponent implements OnInit {
       firstName: p.first_name ?? '',
       lastName: p.last_name ?? '',
       months: Array.from({ length: 12 }, (_, i) => {
-        const key = (p.work_email ?? '').toLowerCase();
+        const key = p.id;
         return lookup.get(key)?.get(i) ?? null;
       }),
     }));
