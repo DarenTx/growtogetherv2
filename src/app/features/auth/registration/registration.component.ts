@@ -73,13 +73,13 @@ export class RegistrationComponent implements OnInit {
       this.form.patchValue({
         first_name: this.existingProfile.first_name ?? '',
         last_name: this.existingProfile.last_name ?? '',
-        work_email: this.existingProfile.work_email ?? user.email ?? '',
-        personal_email: this.existingProfile.personal_email ?? '',
+        work_email: this.existingProfile.work_email ?? '',
+        personal_email: this.existingProfile.personal_email ?? user.email ?? '',
       });
     } else {
-      // New user: pre-fill the work email from the authenticated account.
+      // New user: pre-fill the personal email from the authenticated account.
       this.form.patchValue({
-        work_email: user.email ?? '',
+        personal_email: user.email ?? '',
       });
     }
   }

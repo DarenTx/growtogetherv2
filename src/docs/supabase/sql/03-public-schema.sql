@@ -96,12 +96,16 @@ CREATE FUNCTION public.handle_new_auth_user() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     AS $$
 BEGIN
-    -- ON CONFLICT handles the case where an admin pre-created a profile stub
-    -- with the same email before the user signed up. The id is updated to
-    -- auth.users.id so the profile becomes properly linked to the auth record.
-    INSERT INTO public.profiles (id, work_email)
-    VALUES (new.id, LOWER(TRIM(new.email)))
-    ON CONFLICT (work_email) DO UPDATE SET id = EXCLUDED.id;
+    INSERT INTO public.profiles (id, personal_email, personal_email_verified)
+    VALUES (
+        new.id,
+        LOWER(TRIM(new.email)),
+        (new.email_confirmed_at IS NOT NULL)
+    )
+    ON CONFLICT (id) DO UPDATE
+    SET
+        personal_email = EXCLUDED.personal_email,
+        personal_email_verified = EXCLUDED.personal_email_verified;
     RETURN new;
 END;
 $$;
@@ -195,8 +199,8 @@ CREATE FUNCTION public.sync_verification_status() RETURNS trigger
 BEGIN
     UPDATE public.profiles 
     SET 
-        work_email_verified = (new.email_confirmed_at IS NOT NULL), 
-        work_email = COALESCE(LOWER(TRIM(new.email)), profiles.work_email)
+        personal_email_verified = (new.email_confirmed_at IS NOT NULL), 
+        personal_email = COALESCE(LOWER(TRIM(new.email)), profiles.personal_email)
     WHERE id = new.id;
     RETURN new;
 END;
