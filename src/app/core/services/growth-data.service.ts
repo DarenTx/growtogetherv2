@@ -1,14 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { GrowthData, PersonBankEntry } from '../models/growth-data.interface';
 import { AuthService } from './auth.service';
-import { ProfileService } from './profile.service';
 import { SUPABASE_CLIENT_TOKEN } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class GrowthDataService {
   private readonly client = inject(SUPABASE_CLIENT_TOKEN);
   private readonly auth = inject(AuthService);
-  private readonly profileService = inject(ProfileService);
   private readonly logger = {
     debug: (msg: string, ...args: unknown[]) =>
       console.debug(`[GrowthDataService] ${msg}`, ...args),
@@ -52,16 +50,10 @@ export class GrowthDataService {
       this.logger.warn('getOwnGrowthDataForMonth called without active session');
       return null;
     }
-
-    const emailKey = await this.getCurrentEmailKey();
-    if (!emailKey) {
-      this.logger.warn('getOwnGrowthDataForMonth: current user has no work email');
-      return null;
-    }
     const { data, error } = await this.client
       .from('growth_data')
       .select('*')
-      .eq('email_key', emailKey)
+      .eq('user_id', session.user.id)
       .eq('year', year)
       .eq('month', month)
       .eq('bank_name', bankName)
@@ -249,18 +241,12 @@ export class GrowthDataService {
       return [];
     }
 
-    const emailKey = await this.getCurrentEmailKey();
-    if (!emailKey) {
-      this.logger.warn('getOwnBankNames: current user has no work email');
-      return [];
-    }
-
-    // Query by email_key (not user_id) so that admin-imported rows where
-    // user_id IS NULL are also included — mirrors getOwnGrowthDataForMonth.
+    // Query by user_id so lookups are independent of whether rows were keyed
+    // by work or personal email before/after claiming.
     const { data, error } = await this.client
       .from('growth_data')
       .select('bank_name')
-      .eq('email_key', emailKey)
+      .eq('user_id', session.user.id)
       .order('bank_name');
 
     if (error) {
@@ -271,17 +257,6 @@ export class GrowthDataService {
     const names = [...new Set((data ?? []).map((r: { bank_name: string }) => r.bank_name))];
     this.logger.debug(`Found ${names.length} distinct bank names`);
     return names;
-  }
-
-  private async getCurrentEmailKey(): Promise<string | null> {
-    const session = await this.auth.getSession();
-    if (!session) {
-      return null;
-    }
-
-    const profile = await this.profileService.getProfile();
-    const emailKey = profile?.work_email ?? session.user.email ?? null;
-    return emailKey ? emailKey.toLowerCase() : null;
   }
 
   async getGrowthDataForUserYear(userId: string, year: number): Promise<GrowthData[]> {

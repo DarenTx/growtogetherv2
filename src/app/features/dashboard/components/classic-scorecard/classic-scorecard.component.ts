@@ -124,8 +124,9 @@ export class ClassicScorecardComponent implements OnInit {
     const rows = [...this.allPlayersMonth()].sort((a, b) => a.bank_name.localeCompare(b.bank_name));
 
     for (const r of rows) {
-      if (!result.has(r.email_key)) {
-        result.set(r.email_key, r.growth_pct);
+      if (!r.user_id) continue;
+      if (!result.has(r.user_id)) {
+        result.set(r.user_id, r.growth_pct);
       }
     }
     return result;
@@ -148,11 +149,11 @@ export class ClassicScorecardComponent implements OnInit {
   readonly userRank = computed((): number | null => {
     const map = this.perUserMonthData();
     const profile = this.viewedUserProfile();
-    if (!profile?.work_email) return null;
-    const emailKey = profile.work_email.toLowerCase();
-    if (!map.has(emailKey)) return null;
+    if (!profile?.id) return null;
+    const userId = profile.id;
+    if (!map.has(userId)) return null;
 
-    const userPct = map.get(emailKey)!;
+    const userPct = map.get(userId)!;
     const sorted = Array.from(map.values()).sort((a, b) => b - a);
     return sorted.indexOf(userPct) + 1;
   });

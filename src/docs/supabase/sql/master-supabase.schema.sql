@@ -814,7 +814,7 @@ BEGIN
     WITH claimed_rows AS (
         UPDATE public.growth_data 
         SET user_id = auth.uid() 
-                WHERE email_key = v_work_email 
+            WHERE (email_key = v_work_email OR email_key = v_personal_email)
           AND user_id IS NULL
         RETURNING id
     )

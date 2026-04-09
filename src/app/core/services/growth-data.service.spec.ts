@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { AuthService } from './auth.service';
 import { GrowthDataService } from './growth-data.service';
-import { ProfileService } from './profile.service';
 import { SUPABASE_CLIENT_TOKEN } from './supabase.service';
 
 const mockChain = {
@@ -36,7 +35,6 @@ const MOCK_RECORD = {
 describe('GrowthDataService', () => {
   let service: GrowthDataService;
   let authService: AuthService;
-  let profileService: ProfileService;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -49,21 +47,7 @@ describe('GrowthDataService', () => {
     });
     service = TestBed.inject(GrowthDataService);
     authService = TestBed.inject(AuthService);
-    profileService = TestBed.inject(ProfileService);
     vi.spyOn(authService, 'getSession').mockResolvedValue(MOCK_SESSION as never);
-    vi.spyOn(profileService, 'getProfile').mockResolvedValue({
-      id: 'u1',
-      first_name: 'Test',
-      last_name: 'User',
-      work_email: 'test@example.com',
-      personal_email: 'test.personal@example.com',
-      is_admin: false,
-      work_email_verified: true,
-      personal_email_verified: false,
-      registration_complete: true,
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
-    } as never);
   });
 
   describe('getOwnBankNames', () => {
@@ -96,23 +80,6 @@ describe('GrowthDataService', () => {
 
     it('returns empty array when no session', async () => {
       vi.spyOn(authService, 'getSession').mockResolvedValue(null);
-      expect(await service.getOwnBankNames()).toEqual([]);
-    });
-
-    it('returns empty array when user has no work email', async () => {
-      vi.spyOn(profileService, 'getProfile').mockResolvedValue({
-        id: 'u1',
-        first_name: 'Test',
-        last_name: 'User',
-        work_email: null,
-        personal_email: 'test.personal@example.com',
-        is_admin: false,
-        work_email_verified: false,
-        personal_email_verified: false,
-        registration_complete: true,
-        created_at: '2026-01-01T00:00:00Z',
-        updated_at: '2026-01-01T00:00:00Z',
-      } as never);
       expect(await service.getOwnBankNames()).toEqual([]);
     });
 
