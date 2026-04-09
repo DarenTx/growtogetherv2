@@ -1,12 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { GrowthData, PersonBankEntry } from '../models/growth-data.interface';
 import { AuthService } from './auth.service';
+import { ProfileService } from './profile.service';
 import { SUPABASE_CLIENT_TOKEN } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class GrowthDataService {
   private readonly client = inject(SUPABASE_CLIENT_TOKEN);
   private readonly auth = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
   private readonly logger = {
     debug: (msg: string, ...args: unknown[]) =>
       console.debug(`[GrowthDataService] ${msg}`, ...args),
@@ -24,10 +26,13 @@ export class GrowthDataService {
       return [];
     }
 
+    const emailKeys = await this.getCurrentEmailKeys();
+    const ownFilter = this.buildOwnDataOrClause(session.user.id, emailKeys);
+
     const { data, error } = await this.client
       .from('growth_data')
       .select('*')
-      .eq('user_id', session.user.id)
+      .or(ownFilter)
       .order('year', { ascending: true })
       .order('month', { ascending: true });
 
@@ -50,10 +55,12 @@ export class GrowthDataService {
       this.logger.warn('getOwnGrowthDataForMonth called without active session');
       return null;
     }
+    const emailKeys = await this.getCurrentEmailKeys();
+    const ownFilter = this.buildOwnDataOrClause(session.user.id, emailKeys);
     const { data, error } = await this.client
       .from('growth_data')
       .select('*')
-      .eq('user_id', session.user.id)
+      .or(ownFilter)
       .eq('year', year)
       .eq('month', month)
       .eq('bank_name', bankName)
@@ -79,12 +86,15 @@ export class GrowthDataService {
       throw new Error('Not authenticated');
     }
 
-    // Filter by user_id to align with the RLS policy (USING user_id = auth.uid()).
-    // Filtering by email_key would silently no-op on admin-imported rows where user_id IS NULL.
+    const emailKeys = await this.getCurrentEmailKeys();
+    const ownFilter = this.buildOwnDataOrClause(session.user.id, emailKeys);
+
+    // Filter by user_id first, with email-key fallback so users can edit rows
+    // that have not been backfilled with user_id yet.
     const { error } = await this.client
       .from('growth_data')
       .delete()
-      .eq('user_id', session.user.id)
+      .or(ownFilter)
       .eq('year', year)
       .eq('month', month)
       .eq('bank_name', bankName);
@@ -241,12 +251,15 @@ export class GrowthDataService {
       return [];
     }
 
-    // Query by user_id so lookups are independent of whether rows were keyed
-    // by work or personal email before/after claiming.
+    const emailKeys = await this.getCurrentEmailKeys();
+    const ownFilter = this.buildOwnDataOrClause(session.user.id, emailKeys);
+
+    // Query by user_id first, with email fallback, so rows without user_id
+    // remain visible for the current user.
     const { data, error } = await this.client
       .from('growth_data')
       .select('bank_name')
-      .eq('user_id', session.user.id)
+      .or(ownFilter)
       .order('bank_name');
 
     if (error) {
@@ -275,6 +288,20 @@ export class GrowthDataService {
     }
     this.logger.debug(`Fetched ${(data ?? []).length} growth records for user year`);
     return (data ?? []) as GrowthData[];
+  }
+
+  private async getCurrentEmailKeys(): Promise<string[]> {
+    const profile = await this.profileService.getProfile();
+    const keys = [profile?.personal_email, profile?.work_email]
+      .map((value) => value?.trim().toLowerCase())
+      .filter((value): value is string => !!value);
+    return [...new Set(keys)];
+  }
+
+  private buildOwnDataOrClause(userId: string, emailKeys: string[]): string {
+    const userClause = `user_id.eq.${userId}`;
+    const emailClauses = emailKeys.map((email) => `email_key.eq.${email}`);
+    return [userClause, ...emailClauses].join(',');
   }
 
   async getGrowthDataForYearMonth(year: number, month: number): Promise<GrowthData[]> {

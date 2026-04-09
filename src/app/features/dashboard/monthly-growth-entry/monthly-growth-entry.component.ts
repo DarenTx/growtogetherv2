@@ -133,10 +133,10 @@ export class MonthlyGrowthEntryComponent implements OnInit {
       }
     }
 
-    const userEmail =
-      (await this.profileService.getProfile())?.work_email ?? this.session?.user.email;
+    const profile = await this.profileService.getProfile();
+    const userEmail = profile?.personal_email ?? profile?.work_email ?? this.session?.user.email;
     if (!userEmail) {
-      this.errorMessage.set('Growth data requires a work email address on your profile.');
+      this.errorMessage.set('Growth data requires an email address on your profile.');
       return;
     }
 

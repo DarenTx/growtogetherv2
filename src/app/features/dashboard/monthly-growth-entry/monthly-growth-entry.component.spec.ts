@@ -188,7 +188,7 @@ describe('MonthlyGrowthEntryComponent', () => {
     await component.onSave();
 
     expect(mockService['saveGrowthData']).toHaveBeenCalledWith({
-      email_key: 'test@example.com',
+      email_key: 'test.personal@example.com',
       user_id: 'user-uuid-123',
       year: component.prevYear,
       month: component.prevMonth,

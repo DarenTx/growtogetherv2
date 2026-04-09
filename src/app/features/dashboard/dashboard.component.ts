@@ -73,13 +73,30 @@ export class DashboardComponent implements OnInit {
   // Only populated when PREV_MONTH_YEAR !== CURRENT_YEAR (i.e. in January)
   private readonly prevYearGrowthData = signal<GrowthData[]>([]);
 
+  private matchesProfileGrowthRow(profile: Profile, row: GrowthData): boolean {
+    if (row.user_id === profile.id) {
+      return true;
+    }
+
+    const emailKey = row.email_key.toLowerCase();
+    const personalEmail = profile.personal_email?.toLowerCase();
+    if (personalEmail && emailKey === personalEmail) {
+      return true;
+    }
+
+    const workEmail = profile.work_email?.toLowerCase();
+    return !!workEmail && emailKey === workEmail;
+  }
+
   readonly hasPrevMonthData = computed(() => {
     const profile = this.profile();
     if (!profile?.id) return false;
-    const userId = profile.id;
     const source = PREV_MONTH_YEAR === CURRENT_YEAR ? this.growthData() : this.prevYearGrowthData();
     return source.some(
-      (d) => d.user_id === userId && d.year === PREV_MONTH_YEAR && d.month === PREV_MONTH,
+      (d) =>
+        this.matchesProfileGrowthRow(profile, d) &&
+        d.year === PREV_MONTH_YEAR &&
+        d.month === PREV_MONTH,
     );
   });
 
@@ -100,12 +117,34 @@ export class DashboardComponent implements OnInit {
     const profiles = this.allProfiles();
     const growthData = this.growthData();
 
-    // Build lookup: user_id → month index (0-based) → first growth_pct seen
+    const personalEmailToProfileId = new Map<string, string>();
+    const workEmailToProfileId = new Map<string, string>();
+    for (const profile of profiles) {
+      const personalEmail = profile.personal_email?.toLowerCase();
+      if (personalEmail) {
+        personalEmailToProfileId.set(personalEmail, profile.id);
+      }
+
+      const workEmail = profile.work_email?.toLowerCase();
+      if (workEmail) {
+        workEmailToProfileId.set(workEmail, profile.id);
+      }
+    }
+
+    // Build lookup: profile id → month index (0-based) → first growth_pct seen
     const lookup = new Map<string, Map<number, number>>();
     for (const gd of growthData) {
-      const key = gd.user_id;
-      if (!key) continue;
-      if (!lookup.has(key)) lookup.set(key, new Map<number, number>());
+      const key = gd.user_id
+        ? gd.user_id
+        : (personalEmailToProfileId.get(gd.email_key.toLowerCase()) ??
+          workEmailToProfileId.get(gd.email_key.toLowerCase()));
+      if (!key) {
+        continue;
+      }
+
+      if (!lookup.has(key)) {
+        lookup.set(key, new Map<number, number>());
+      }
       const monthMap = lookup.get(key)!;
       const idx = gd.month - 1; // convert 1-based month to 0-based index
       if (!monthMap.has(idx)) monthMap.set(idx, gd.growth_pct);

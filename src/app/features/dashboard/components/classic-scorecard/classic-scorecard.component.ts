@@ -66,6 +66,21 @@ export class ClassicScorecardComponent implements OnInit {
   // True until the first successful data load; enables auto-navigation to last month with data.
   private _initialLoad = true;
 
+  private matchesProfileGrowthRow(profile: Profile, row: GrowthData): boolean {
+    if (row.user_id === profile.id) {
+      return true;
+    }
+
+    const emailKey = row.email_key.toLowerCase();
+    const personalEmail = profile.personal_email?.toLowerCase();
+    if (personalEmail && emailKey === personalEmail) {
+      return true;
+    }
+
+    const workEmail = profile.work_email?.toLowerCase();
+    return !!workEmail && emailKey === workEmail;
+  }
+
   // ── Display year/month (base inputs + navigation offset) ──────────────────
   readonly displayYear = computed((): number => {
     const total = this.year() * 12 + (this.month() - 1) + this.offsetMonths();
@@ -122,11 +137,33 @@ export class ClassicScorecardComponent implements OnInit {
   readonly perUserMonthData = computed((): Map<string, number> => {
     const result = new Map<string, number>();
     const rows = [...this.allPlayersMonth()].sort((a, b) => a.bank_name.localeCompare(b.bank_name));
+    const profiles = this.allProfiles();
+
+    const personalEmailToProfileId = new Map<string, string>();
+    const workEmailToProfileId = new Map<string, string>();
+    for (const profile of profiles) {
+      const personalEmail = profile.personal_email?.toLowerCase();
+      if (personalEmail) {
+        personalEmailToProfileId.set(personalEmail, profile.id);
+      }
+
+      const workEmail = profile.work_email?.toLowerCase();
+      if (workEmail) {
+        workEmailToProfileId.set(workEmail, profile.id);
+      }
+    }
 
     for (const r of rows) {
-      if (!r.user_id) continue;
-      if (!result.has(r.user_id)) {
-        result.set(r.user_id, r.growth_pct);
+      const profileId = r.user_id
+        ? r.user_id
+        : (personalEmailToProfileId.get(r.email_key.toLowerCase()) ??
+          workEmailToProfileId.get(r.email_key.toLowerCase()));
+      if (!profileId) {
+        continue;
+      }
+
+      if (!result.has(profileId)) {
+        result.set(profileId, r.growth_pct);
       }
     }
     return result;
@@ -323,11 +360,17 @@ export class ClassicScorecardComponent implements OnInit {
         return;
       }
 
-      // Fetch the user's year data first so we can check whether auto-navigation is needed.
-      const userYearData = await this.growthDataService.getGrowthDataForUserYear(
-        this.uuid(),
-        loadedYear,
-      );
+      // Fetch all year rows + profiles, then resolve the viewed user's rows via
+      // user_id first and email-key fallback for null-user placeholder rows.
+      const [allYearData, profiles] = await Promise.all([
+        this.growthDataService.getGrowthDataForYear(loadedYear),
+        this.profileService.getRegisteredProfiles(),
+      ]);
+
+      const viewedProfile = profiles.find((p) => p.id === this.uuid()) ?? null;
+      const userYearData = viewedProfile
+        ? allYearData.filter((row) => this.matchesProfileGrowthRow(viewedProfile, row))
+        : [];
       const hasDataForMonth = userYearData.some((d) => d.month === loadedMonth);
 
       if (!hasDataForMonth && this._initialLoad) {
@@ -344,10 +387,10 @@ export class ClassicScorecardComponent implements OnInit {
 
         // No earlier data in the same year — try one year back.
         if (loadedYear > 2000) {
-          const prevYearData = await this.growthDataService.getGrowthDataForUserYear(
-            this.uuid(),
-            loadedYear - 1,
-          );
+          const prevYearDataAll = await this.growthDataService.getGrowthDataForYear(loadedYear - 1);
+          const prevYearData = viewedProfile
+            ? prevYearDataAll.filter((row) => this.matchesProfileGrowthRow(viewedProfile, row))
+            : [];
           const prevYearMonths = [...new Set(prevYearData.map((d) => d.month))];
           if (prevYearMonths.length > 0) {
             const targetMonth = Math.max(...prevYearMonths);
@@ -361,10 +404,9 @@ export class ClassicScorecardComponent implements OnInit {
 
       this._initialLoad = false;
 
-      const [allMonthData, marketData, profiles] = await Promise.all([
+      const [allMonthData, marketData] = await Promise.all([
         this.growthDataService.getGrowthDataForYearMonth(loadedYear, loadedMonth),
         this.marketDataService.getMarketIndexesForMonth(loadedYear, loadedMonth),
-        this.profileService.getRegisteredProfiles(),
       ]);
 
       this.userMonthlyData.set(userYearData);
