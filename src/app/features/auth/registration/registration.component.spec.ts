@@ -55,10 +55,10 @@ describe('RegistrationComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('prefills the work email from the authenticated user', async () => {
+  it('prefills the personal email from the authenticated user', async () => {
     mockProfile['getProfile'] = vi.fn().mockResolvedValue(null);
     await createComponent();
-    expect(component.workEmailControl.value).toBe('john@example.com');
+    expect(component.personalEmailControl.value).toBe('john@example.com');
   });
 
   it('prefills work and personal email from an existing profile', async () => {
