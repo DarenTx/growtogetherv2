@@ -883,4 +883,109 @@ describe('ClassicScorecardComponent', () => {
       });
     });
   });
+
+  // ── Guarded refresh-trigger effect ──────────────────────────────────────────
+
+  describe('guarded refresh-trigger effect', () => {
+    beforeEach(async () => {
+      mockGrowthData['getGrowthDataForUserYear'] = vi
+        .fn()
+        .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 2.38 })]);
+      mockMarketData['getMarketIndexesForMonth'] = vi
+        .fn()
+        .mockResolvedValue([makeMarketIndex({ index_name: 'Dow Jones', growth_pct: 1.5 })]);
+      mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
+      mockGrowthData['getGrowthDataForYearMonth'] = vi
+        .fn()
+        .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 2.38 })]);
+    });
+
+    it('does not reset offset on first component load', async () => {
+      await setupComponent(2025, 6);
+      // Manually navigate to a different month
+      component.goToPrevMonth();
+      expect(component.offsetMonths()).toBe(-1);
+      fixture.detectChanges();
+      await flushPromises();
+      // Still at -1, not reset
+      expect(component.offsetMonths()).toBe(-1);
+    });
+
+    it('resets offset to 0 when refreshTrigger value changes (e.g. after save)', async () => {
+      fixture = TestBed.createComponent(ClassicScorecardComponent);
+      component = fixture.componentInstance;
+      fixture.componentRef.setInput('year', 2025);
+      fixture.componentRef.setInput('month', 6);
+      fixture.componentRef.setInput('uuid', MOCK_SESSION.user.id);
+      fixture.componentRef.setInput('refreshTrigger', 0);
+      fixture.detectChanges();
+      await flushPromises();
+
+      // Manually navigate back one month
+      component.goToPrevMonth();
+      expect(component.offsetMonths()).toBe(-1);
+      fixture.detectChanges();
+
+      // Now simulate parent incrementing refreshTrigger (e.g. monthly entry saved)
+      fixture.componentRef.setInput('refreshTrigger', 1);
+      fixture.detectChanges();
+      await flushPromises();
+      fixture.detectChanges();
+
+      // Offset should reset to 0
+      expect(component.offsetMonths()).toBe(0);
+    });
+
+    it('does NOT reset offset when refreshTrigger stays the same', async () => {
+      fixture = TestBed.createComponent(ClassicScorecardComponent);
+      component = fixture.componentInstance;
+      fixture.componentRef.setInput('year', 2025);
+      fixture.componentRef.setInput('month', 6);
+      fixture.componentRef.setInput('uuid', MOCK_SESSION.user.id);
+      fixture.componentRef.setInput('refreshTrigger', 1);
+      fixture.detectChanges();
+      await flushPromises();
+
+      // Navigate back
+      component.goToPrevMonth();
+      expect(component.offsetMonths()).toBe(-1);
+
+      // Update some other input (not refreshTrigger) and detectChanges
+      fixture.componentRef.setInput('uuid', MOCK_SESSION.user.id);
+      fixture.detectChanges();
+      await flushPromises();
+
+      // Offset should still be -1 (not reset)
+      expect(component.offsetMonths()).toBe(-1);
+    });
+
+    it('resets offset again when refreshTrigger changes a second time', async () => {
+      fixture = TestBed.createComponent(ClassicScorecardComponent);
+      component = fixture.componentInstance;
+      fixture.componentRef.setInput('year', 2025);
+      fixture.componentRef.setInput('month', 6);
+      fixture.componentRef.setInput('uuid', MOCK_SESSION.user.id);
+      fixture.componentRef.setInput('refreshTrigger', 0);
+      fixture.detectChanges();
+      await flushPromises();
+
+      // First refresh trigger change
+      fixture.componentRef.setInput('refreshTrigger', 1);
+      fixture.detectChanges();
+      await flushPromises();
+      expect(component.offsetMonths()).toBe(0);
+
+      // Navigate back again
+      component.goToPrevMonth();
+      expect(component.offsetMonths()).toBe(-1);
+
+      // Second refresh trigger change
+      fixture.componentRef.setInput('refreshTrigger', 2);
+      fixture.detectChanges();
+      await flushPromises();
+
+      // Offset should reset to 0 again
+      expect(component.offsetMonths()).toBe(0);
+    });
+  });
 });

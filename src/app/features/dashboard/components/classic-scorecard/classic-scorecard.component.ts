@@ -65,6 +65,7 @@ export class ClassicScorecardComponent implements OnInit {
   private _loadInProgress = false;
   // True until the first successful data load; enables auto-navigation to last month with data.
   private _initialLoad = true;
+  private _lastRefreshTrigger: number | null = null;
 
   private matchesProfileGrowthRow(profile: Profile, row: GrowthData): boolean {
     if (row.user_id === profile.id) {
@@ -328,6 +329,24 @@ export class ClassicScorecardComponent implements OnInit {
         untracked(() => {
           this.offsetMonths.set(0);
           this._initialLoad = true;
+        });
+      });
+
+      // On explicit refresh (e.g. monthly entry saved), reset to base month/year
+      // only when the trigger value actually changes.
+      effect(() => {
+        const refresh = this.refreshTrigger();
+        untracked(() => {
+          if (this._lastRefreshTrigger === null) {
+            this._lastRefreshTrigger = refresh;
+            return;
+          }
+
+          if (refresh !== this._lastRefreshTrigger) {
+            this.offsetMonths.set(0);
+            this._initialLoad = true;
+            this._lastRefreshTrigger = refresh;
+          }
         });
       });
 
