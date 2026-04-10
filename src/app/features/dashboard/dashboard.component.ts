@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   OnInit,
   computed,
   inject,
@@ -24,6 +25,12 @@ const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
 const PREV_MONTH = CURRENT_MONTH === 1 ? 12 : CURRENT_MONTH - 1;
 const PREV_MONTH_YEAR = CURRENT_MONTH === 1 ? CURRENT_YEAR - 1 : CURRENT_YEAR;
+const INSTALL_PROMPT_DISMISSED_KEY = 'grow_together_install_prompt_dismissed';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
 
 export interface DashboardRow {
   profileId: string;
@@ -45,7 +52,7 @@ export interface DashboardRow {
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly profileService = inject(ProfileService);
   private readonly adminService = inject(AdminService);
@@ -70,8 +77,35 @@ export class DashboardComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
 
+  readonly deferredInstallPrompt = signal<BeforeInstallPromptEvent | null>(null);
+  readonly isStandalone = signal(false);
+  readonly isPhone = signal(false);
+  readonly isIos = signal(false);
+  readonly installPromptDismissed = signal(false);
+  readonly showInstallPrompt = computed(
+    () =>
+      !this.loading() &&
+      !this.errorMessage() &&
+      this.isPhone() &&
+      !this.isStandalone() &&
+      !this.installPromptDismissed() &&
+      (!!this.deferredInstallPrompt() || this.isIos()),
+  );
+
   // Only populated when PREV_MONTH_YEAR !== CURRENT_YEAR (i.e. in January)
   private readonly prevYearGrowthData = signal<GrowthData[]>([]);
+
+  private readonly beforeInstallPromptHandler = (event: Event): void => {
+    event.preventDefault();
+    this.deferredInstallPrompt.set(event as BeforeInstallPromptEvent);
+  };
+
+  private readonly appInstalledHandler = (): void => {
+    this.isStandalone.set(true);
+    this.installPromptDismissed.set(true);
+    this.deferredInstallPrompt.set(null);
+    this.persistInstallPromptDismissed();
+  };
 
   private matchesProfileGrowthRow(profile: Profile, row: GrowthData): boolean {
     if (row.user_id === profile.id) {
@@ -162,6 +196,8 @@ export class DashboardComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    this.initializeInstallPromptState();
+
     this.loading.set(true);
     this.errorMessage.set(null);
     try {
@@ -184,6 +220,14 @@ export class DashboardComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  ngOnDestroy(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.removeEventListener('beforeinstallprompt', this.beforeInstallPromptHandler);
+    window.removeEventListener('appinstalled', this.appInstalledHandler);
   }
 
   async onYearChange(year: number): Promise<void> {
@@ -246,5 +290,69 @@ export class DashboardComponent implements OnInit {
   async signOut(): Promise<void> {
     await this.auth.signOut();
     await this.router.navigate(['/login']);
+  }
+
+  async installShortcut(): Promise<void> {
+    const promptEvent = this.deferredInstallPrompt();
+    if (!promptEvent) {
+      return;
+    }
+
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    if (choice.outcome === 'accepted') {
+      this.installPromptDismissed.set(true);
+      this.persistInstallPromptDismissed();
+    }
+    this.deferredInstallPrompt.set(null);
+  }
+
+  dismissInstallPrompt(): void {
+    this.installPromptDismissed.set(true);
+    this.persistInstallPromptDismissed();
+  }
+
+  private initializeInstallPromptState(): void {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return;
+    }
+
+    const ua = navigator.userAgent.toLowerCase();
+    this.isPhone.set(/iphone|ipod|android|mobile/.test(ua));
+    this.isIos.set(/iphone|ipad|ipod/.test(ua));
+
+    const standaloneFromMedia =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(display-mode: standalone)').matches;
+    const standaloneFromNavigator =
+      'standalone' in navigator && Boolean((navigator as { standalone?: boolean }).standalone);
+    this.isStandalone.set(standaloneFromMedia || standaloneFromNavigator);
+
+    this.installPromptDismissed.set(this.readInstallPromptDismissed());
+
+    window.addEventListener('beforeinstallprompt', this.beforeInstallPromptHandler);
+    window.addEventListener('appinstalled', this.appInstalledHandler);
+  }
+
+  private readInstallPromptDismissed(): boolean {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    try {
+      return window.localStorage.getItem(INSTALL_PROMPT_DISMISSED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private persistInstallPromptDismissed(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(INSTALL_PROMPT_DISMISSED_KEY, 'true');
+    } catch {
+      // Ignore storage failures (private browsing, disabled storage).
+    }
   }
 }

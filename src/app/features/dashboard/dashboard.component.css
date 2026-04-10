@@ -15,6 +15,59 @@
   margin-bottom: 1rem;
 }
 
+.gt-install-banner {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid var(--color-border-muted, rgb(148 163 184 / 0.4));
+  background:
+    radial-gradient(circle at top right, rgb(125 211 252 / 0.2), transparent 56%),
+    var(--color-panel-bg, rgb(15 23 42 / 0.72));
+}
+
+.gt-install-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.gt-install-copy {
+  margin: 0.4rem 0 0;
+  color: var(--color-text-muted, rgb(226 232 240));
+}
+
+.gt-install-actions {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.gt-install-btn {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gt-install-btn-primary {
+  background: rgb(56 189 248);
+  color: rgb(3 7 18);
+}
+
+.gt-install-btn-secondary {
+  border-color: rgb(148 163 184 / 0.6);
+  background: transparent;
+  color: inherit;
+}
+
+.gt-install-btn:focus-visible {
+  outline: 2px solid rgb(56 189 248);
+  outline-offset: 2px;
+}
+
 .gt-scorecard-row > * {
   flex: 1 1 100%;
   min-width: 0;

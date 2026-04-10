@@ -11,6 +11,37 @@
       (signOut)="signOut()"
     />
 
+    @if (showInstallPrompt()) {
+      <section class="gt-install-banner" aria-live="polite">
+        <h2 class="gt-install-title">Add Grow Together to your phone</h2>
+        @if (deferredInstallPrompt()) {
+          <p class="gt-install-copy">Install the app to your home screen for faster access.</p>
+        } @else {
+          <p class="gt-install-copy">
+            On iPhone, tap the Share button in Safari and choose Add to Home Screen.
+          </p>
+        }
+        <div class="gt-install-actions">
+          @if (deferredInstallPrompt()) {
+            <button
+              type="button"
+              class="gt-install-btn gt-install-btn-primary"
+              (click)="installShortcut()"
+            >
+              Add Shortcut
+            </button>
+          }
+          <button
+            type="button"
+            class="gt-install-btn gt-install-btn-secondary"
+            (click)="dismissInstallPrompt()"
+          >
+            Not now
+          </button>
+        </div>
+      </section>
+    }
+
     @if (profile()?.id) {
       <div class="gt-scorecard-row">
         @if (showGrowthEntry()) {
