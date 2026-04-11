@@ -32,6 +32,13 @@ type GoogleIdentityClient = {
   prompt(listener?: (notification: GooglePromptNotification) => void): void;
 };
 
+const DISALLOWED_LOGIN_DOMAIN = 'fmr.com';
+
+function isDisallowedLoginEmail(email: string): boolean {
+  const normalizedEmail = normalizeEmail(email);
+  return normalizedEmail.endsWith(`@${DISALLOWED_LOGIN_DOMAIN}`);
+}
+
 declare global {
   interface Window {
     google?: {
@@ -90,6 +97,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
     if (!isEmail(value)) {
       this.emailError.set('Please enter a valid email address.');
+    } else if (isDisallowedLoginEmail(value)) {
+      this.emailError.set('Please use a personal email address.');
     } else {
       this.emailError.set('');
     }
@@ -109,6 +118,12 @@ export class LoginComponent implements OnInit, OnDestroy {
     try {
       if (!isEmail(rawValue)) {
         this.emailError.set('Please enter a valid email address.');
+        this.state.set('idle');
+        return;
+      }
+
+      if (isDisallowedLoginEmail(rawValue)) {
+        this.emailError.set('Please use a personal email address.');
         this.state.set('idle');
         return;
       }

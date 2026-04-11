@@ -114,4 +114,45 @@ describe('RegistrationComponent', () => {
     expect(component.state()).toBe('error');
     expect(component.errorMessage()).toContain('Invalid invitation code');
   });
+
+  it('blocks fmr.com personal email addresses', async () => {
+    await createComponent();
+    component.form.setValue({
+      first_name: 'John',
+      last_name: 'Doe',
+      work_email: 'john@example.com',
+      personal_email: 'john@fmr.com',
+      invitation_code: 'Fruehling',
+    });
+
+    await component.onSubmit();
+
+    expect(component.personalEmailControl.hasError('fmrDomain')).toBe(true);
+    expect(mockProfile['completeRegistration']).not.toHaveBeenCalled();
+  });
+
+  it('surfaces no-match PRR data errors', async () => {
+    mockProfile['completeRegistration'] = vi
+      .fn()
+      .mockRejectedValue(
+        new Error(
+          'No unclaimed PRR data found. Either your personal or work email must match the email that receives PRR notifications.',
+        ),
+      );
+    await createComponent();
+    component.form.setValue({
+      first_name: 'John',
+      last_name: 'Doe',
+      work_email: 'john@example.com',
+      personal_email: 'john.personal@example.com',
+      invitation_code: 'Fruehling',
+    });
+
+    await component.onSubmit();
+
+    expect(component.state()).toBe('error');
+    expect(component.errorMessage()).toContain(
+      'must match the email that receives PRR notifications',
+    );
+  });
 });

@@ -1,5 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { Profile } from '../../../core/models/profile.interface';
 import { normalizeEmail } from '../../../core/utils/email.utils';
@@ -7,6 +14,16 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
 
 type RegistrationState = 'loading' | 'ready' | 'submitting' | 'error';
+
+function disallowFmrPersonalEmail(control: AbstractControl): ValidationErrors | null {
+  const value = String(control.value ?? '')
+    .trim()
+    .toLowerCase();
+  if (!value || !value.includes('@')) return null;
+
+  const domain = value.slice(value.lastIndexOf('@') + 1);
+  return domain === 'fmr.com' ? { fmrDomain: true } : null;
+}
 
 @Component({
   selector: 'app-registration',
@@ -23,7 +40,11 @@ export class RegistrationComponent implements OnInit {
     first_name: new FormControl('', [Validators.required]),
     last_name: new FormControl('', [Validators.required]),
     work_email: new FormControl('', [Validators.required, Validators.email]),
-    personal_email: new FormControl('', [Validators.required, Validators.email]),
+    personal_email: new FormControl('', [
+      Validators.required,
+      Validators.email,
+      disallowFmrPersonalEmail,
+    ]),
     invitation_code: new FormControl('', [Validators.required]),
   });
 
@@ -110,6 +131,10 @@ export class RegistrationComponent implements OnInit {
             : String(err);
       if (raw.toLowerCase().includes('invitation code')) {
         this.errorMessage.set('Invalid invitation code. Please contact the administrator.');
+      } else if (raw.toLowerCase().includes('no unclaimed prr data found')) {
+        this.errorMessage.set(
+          'No unclaimed PRR data was found. Your personal or work email must match the email that receives PRR notifications.',
+        );
       } else {
         this.errorMessage.set(raw || 'Registration failed. Please try again.');
       }

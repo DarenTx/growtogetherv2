@@ -57,6 +57,12 @@ describe('LoginComponent', () => {
     expect(component.emailError()).toBe('');
   });
 
+  it('shows a personal-email error on blur for fmr.com addresses', () => {
+    component.identifierControl.setValue('user@fmr.com');
+    component.onIdentifierBlur();
+    expect(component.emailError()).toContain('personal email');
+  });
+
   it('submits a normalized email magic link request', async () => {
     component.identifierControl.setValue(' User@Example.COM ');
     await component.onSubmit();
@@ -71,6 +77,15 @@ describe('LoginComponent', () => {
     await component.onSubmit();
 
     expect(component.emailError()).toContain('valid email');
+    expect(mockAuth['signInWithEmail']).not.toHaveBeenCalled();
+  });
+
+  it('does not submit when the identifier uses fmr.com', async () => {
+    component.identifierControl.setValue('User@FMR.com');
+    await component.onSubmit();
+
+    expect(component.emailError()).toContain('personal email');
+    expect(component.state()).toBe('idle');
     expect(mockAuth['signInWithEmail']).not.toHaveBeenCalled();
   });
 

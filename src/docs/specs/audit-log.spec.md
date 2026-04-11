@@ -186,25 +186,30 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 AS $$
+  WITH visible_logs AS (
+    SELECT
+      al.id,
+      al.table_name,
+      al.record_id,
+      al.action,
+      al.performed_by,
+      p.first_name AS performer_first_name,
+      p.last_name AS performer_last_name,
+      al.old_data,
+      al.new_data,
+      al.created_at
+    FROM public.audit_logs al
+    LEFT JOIN public.profiles p ON p.id = al.performed_by
+    WHERE NULLIF(BTRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))), '') IS NOT NULL
+  )
   SELECT json_build_object(
-    'total', (SELECT COUNT(*) FROM public.audit_logs),
+    'total', (SELECT COUNT(*) FROM visible_logs),
     'rows', (
       SELECT json_agg(r)
       FROM (
-        SELECT
-          al.id,
-          al.table_name,
-          al.record_id,
-          al.action,
-          al.performed_by,
-          p.first_name  AS performer_first_name,
-          p.last_name   AS performer_last_name,
-          al.old_data,
-          al.new_data,
-          al.created_at
-        FROM public.audit_logs al
-        LEFT JOIN public.profiles p ON p.id = al.performed_by
-        ORDER BY al.created_at DESC
+        SELECT *
+        FROM visible_logs
+        ORDER BY created_at DESC
         LIMIT p_limit OFFSET p_offset
       ) r
     )
@@ -217,6 +222,7 @@ $$;
 - `SECURITY DEFINER` ensures the join to `profiles` succeeds regardless of the caller's RLS context.
 - `STABLE` allows Postgres to cache the plan within a transaction.
 - The total count is computed in the same call to avoid a second round trip.
+- Rows without a non-empty joined performer name are excluded so `System` entries are not returned.
 - Grant execute to the `authenticated` role: `GRANT EXECUTE ON FUNCTION public.get_audit_log_page(INT, INT) TO authenticated;`
 - **`performed_by` join behaviour:** `audit_logs.performed_by` is populated from `auth.uid()` at the time of the database operation, which is always the `auth.users.id`. For real auth users, `profiles.id` equals `auth.users.id` (guaranteed by the `handle_new_auth_user` trigger), so the LEFT JOIN resolves to a name. For placeholder profiles that have not yet been onboarded, `profiles.id` is a random UUID unrelated to any auth user — the join returns `NULL` and the component falls back to `"System"`. This is expected behaviour until the future onboarding Edge Function updates `profiles.id` to match the auth UUID.
 

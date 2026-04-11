@@ -819,6 +819,10 @@ BEGIN
         RETURNING id
     )
     SELECT COUNT(*) INTO v_claimed_count FROM claimed_rows;
+
+    IF v_claimed_count = 0 THEN
+        RAISE EXCEPTION 'No unclaimed PRR data found. Either your personal or work email must match the email that receives PRR notifications.';
+    END IF;
     
     -- Update profile with registration details
     UPDATE public.profiles 
@@ -849,29 +853,34 @@ ALTER FUNCTION public.complete_registration(p_first_name text, p_last_name text,
 CREATE FUNCTION public.get_audit_log_page(p_offset integer, p_limit integer) RETURNS json
     LANGUAGE sql STABLE SECURITY DEFINER
     AS $$
-  SELECT json_build_object(
-    'total', (SELECT COUNT(*) FROM public.audit_logs),
-    'rows', (
-      SELECT json_agg(r)
-      FROM (
+    WITH visible_logs AS (
         SELECT
-          al.id,
-          al.table_name,
-          al.record_id,
-          al.action,
-          al.performed_by,
-          p.first_name  AS performer_first_name,
-          p.last_name   AS performer_last_name,
-          al.old_data,
-          al.new_data,
-          al.created_at
+            al.id,
+            al.table_name,
+            al.record_id,
+            al.action,
+            al.performed_by,
+            p.first_name AS performer_first_name,
+            p.last_name AS performer_last_name,
+            al.old_data,
+            al.new_data,
+            al.created_at
         FROM public.audit_logs al
         LEFT JOIN public.profiles p ON p.id = al.performed_by
-        ORDER BY al.created_at DESC
-        LIMIT p_limit OFFSET p_offset
-      ) r
+        WHERE NULLIF(BTRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))), '') IS NOT NULL
     )
-  );
+    SELECT json_build_object(
+        'total', (SELECT COUNT(*) FROM visible_logs),
+        'rows', (
+            SELECT json_agg(r)
+            FROM (
+                SELECT *
+                FROM visible_logs
+                ORDER BY created_at DESC
+                LIMIT p_limit OFFSET p_offset
+            ) r
+        )
+    );
 $$;
 
 

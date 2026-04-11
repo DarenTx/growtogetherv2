@@ -72,9 +72,15 @@
             autocomplete="email"
             class="gt-input"
           />
-          @if (personalEmailControl.invalid && personalEmailControl.touched) {
+          @if (personalEmailControl.hasError('required') && personalEmailControl.touched) {
+            <span class="gt-field-error field-error">A personal email address is required.</span>
+          } @else if (personalEmailControl.hasError('email') && personalEmailControl.touched) {
             <span class="gt-field-error field-error"
               >A valid personal email address is required.</span
+            >
+          } @else if (personalEmailControl.hasError('fmrDomain') && personalEmailControl.touched) {
+            <span class="gt-field-error field-error"
+              >Personal email cannot use an fmr.com address.</span
             >
           }
         </div>
