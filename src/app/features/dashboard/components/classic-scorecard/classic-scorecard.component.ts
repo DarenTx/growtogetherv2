@@ -110,75 +110,80 @@ export class ClassicScorecardComponent implements OnInit {
     return Array.from(byMonth.values()).join(',');
   });
 
-  readonly perUserMonthData = computed((): Map<string, number> => {
-    const result = new Map<string, number>();
-    const rows = [...this.allPlayersMonth()].sort((a, b) => a.bank_name.localeCompare(b.bank_name));
+  // Deduplicated player-bank pairs: one row per unique profile+bank combo,
+  // matching the grid's grouping logic. Rows with user_id are preferred so
+  // userRank can locate the viewed user by user_id.
+  readonly playerBankRows = computed(() => {
     const profiles = this.allProfiles();
-
     const profileById = new Map<string, Profile>();
     const profileByEmail = new Map<string, Profile>();
     for (const profile of profiles) {
       profileById.set(profile.id, profile);
-
       const personalEmail = profile.personal_email?.toLowerCase();
-      if (personalEmail) {
-        profileByEmail.set(personalEmail, profile);
-      }
-
+      if (personalEmail) profileByEmail.set(personalEmail, profile);
       const workEmail = profile.work_email?.toLowerCase();
-      if (workEmail) {
-        profileByEmail.set(workEmail, profile);
-      }
+      if (workEmail) profileByEmail.set(workEmail, profile);
     }
-
-    for (const r of rows) {
+    // Prefer linked rows (user_id set) so userRank lookup works correctly.
+    const sorted = [...this.allPlayersMonth()].sort((a, b) => {
+      if (a.user_id && !b.user_id) return -1;
+      if (!a.user_id && b.user_id) return 1;
+      return 0;
+    });
+    const seen = new Set<string>();
+    const result: GrowthData[] = [];
+    for (const r of sorted) {
       const emailKey = r.email_key?.toLowerCase();
       const profile = r.user_id
         ? profileById.get(r.user_id)
         : emailKey
           ? profileByEmail.get(emailKey)
           : undefined;
-
-      // Keep ranking math aligned with the rankings grid by counting only rows
-      // that resolve to a registered profile.
-      if (!profile) {
-        continue;
-      }
-
-      if (!result.has(profile.id)) {
-        result.set(profile.id, r.growth_pct);
-      }
+      if (!profile) continue;
+      const key = `${profile.id}::${r.bank_name.trim().toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push(r);
     }
     return result;
   });
 
+  // Player average: arithmetic mean of all player-bank pairs
   readonly playerAvg = computed((): number | null => {
-    const map = this.perUserMonthData();
-    if (map.size === 0) return null;
-    const values = Array.from(map.values());
-    return values.reduce((sum, v) => sum + v, 0) / values.length;
+    const rows = this.playerBankRows();
+    if (rows.length === 0) return null;
+    return rows.reduce((sum, r) => sum + r.growth_pct, 0) / rows.length;
   });
 
-  readonly playerAvgDiff = computed((): number | null => {
-    const pct = this.userGrowthPct();
-    const avg = this.playerAvg();
-    if (pct === null || avg === null) return null;
-    return pct - avg;
-  });
-
+  // User rank: position among all player-bank pairs
   readonly userRank = computed((): number | null => {
-    const map = this.perUserMonthData();
+    const rows = this.playerBankRows();
+    if (!rows.length) return null;
     const profile = this.viewedUserProfile();
     if (!profile?.id) return null;
-    const userId = profile.id;
-    if (!map.has(userId)) return null;
-
-    const userPct = map.get(userId)!;
-    const sorted = Array.from(map.values()).sort((a, b) => b - a);
-    return sorted.indexOf(userPct) + 1;
+    // Match by user_id or email key (older rows may have no user_id)
+    const personalEmail = profile.personal_email?.toLowerCase();
+    const workEmail = profile.work_email?.toLowerCase();
+    const isUserRow = (r: GrowthData): boolean => {
+      if (r.user_id === profile.id) return true;
+      const emailKey = r.email_key?.toLowerCase();
+      if (!emailKey) return false;
+      return (
+        (!!personalEmail && emailKey === personalEmail) || (!!workEmail && emailKey === workEmail)
+      );
+    };
+    const userRows = rows.filter(isUserRow);
+    if (!userRows.length) return null;
+    const userBest = Math.max(...userRows.map((r) => r.growth_pct));
+    const sorted = [...rows].sort((a, b) => b.growth_pct - a.growth_pct);
+    const rank = sorted.findIndex((r) => r.growth_pct === userBest && isUserRow(r)) + 1;
+    return rank > 0 ? rank : null;
   });
 
-  readonly totalPlayerCount = computed(() => this.perUserMonthData().size);
+  // Denominator: total number of player-bank pairs
+  readonly totalPlayerCount = computed(() => this.playerBankRows().length);
+
+  // (Replaced by playerBankRows-based logic above)
 
   readonly dowGrowthPct = computed((): number | null => {
     const idx = this.marketIndexes().find((m) => m.index_name.toLowerCase().startsWith('dow'));
@@ -268,6 +273,13 @@ export class ClassicScorecardComponent implements OnInit {
   readonly formattedSp500Pct = computed((): string => {
     const v = this.sp500Diff();
     return v !== null ? fmt(v) : '';
+  });
+
+  readonly playerAvgDiff = computed((): number | null => {
+    const user = this.userGrowthPct();
+    const avg = this.playerAvg();
+    if (user === null || avg === null) return null;
+    return user - avg;
   });
 
   readonly formattedPlayerAvgDiff = computed((): string => {

@@ -24,7 +24,7 @@ export class TrendLabelComponent {
   readonly parsedValues = computed(() =>
     this.data()
       .split(',')
-      .map((token) => parseFloat(token.trim()))
+      .map((token: string) => parseFloat(token.trim()))
       .filter((n) => !isNaN(n)),
   );
 
