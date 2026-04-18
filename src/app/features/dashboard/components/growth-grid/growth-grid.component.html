@@ -50,10 +50,13 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of sortedRows(); track row.profileId) {
+        @for (row of sortedRows(); track row.profileId + '|' + row.bankName) {
           <tr>
             <td class="col-name">
-              {{ row.lastName }}, {{ row.firstName }}
+              <span class="gt-player-name">{{ row.lastName }}, {{ row.firstName }}</span>
+              @if (row.bankName) {
+                <span class="gt-bank-name">{{ row.bankName }}</span>
+              }
               <span class="trend-inline">
                 <app-trend-label
                   [data]="trendData(row.months)"

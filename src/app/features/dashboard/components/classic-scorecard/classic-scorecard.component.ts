@@ -61,7 +61,11 @@ export class ClassicScorecardComponent implements OnInit {
       return true;
     }
 
-    const emailKey = row.email_key.toLowerCase();
+    const emailKey = row.email_key?.toLowerCase();
+    if (!emailKey) {
+      return false;
+    }
+
     const personalEmail = profile.personal_email?.toLowerCase();
     if (personalEmail && emailKey === personalEmail) {
       return true;
@@ -126,11 +130,13 @@ export class ClassicScorecardComponent implements OnInit {
     }
 
     for (const r of rows) {
+      const emailKey = r.email_key?.toLowerCase();
       const profileId = r.user_id
         ? r.user_id
-        : (personalEmailToProfileId.get(r.email_key.toLowerCase()) ??
-          workEmailToProfileId.get(r.email_key.toLowerCase()));
-      const resolvedKey = profileId ?? `email:${r.email_key.toLowerCase()}`;
+        : emailKey
+          ? (personalEmailToProfileId.get(emailKey) ?? workEmailToProfileId.get(emailKey))
+          : undefined;
+      const resolvedKey = profileId ?? (emailKey ? `email:${emailKey}` : `row:${r.id}`);
 
       if (!result.has(resolvedKey)) {
         result.set(resolvedKey, r.growth_pct);

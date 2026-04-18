@@ -2,8 +2,20 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MonthlyRankListComponent, MonthlyRankRow } from './monthly-rank-list.component';
 
 const MOCK_ROWS: MonthlyRankRow[] = [
-  { rank: 1, playerName: 'Adams, Bob', trendData: '1.2,2.4,3.1', growthPct: 3.1 },
-  { rank: 2, playerName: 'Smith, Alice', trendData: '-0.6,0.5,2.4', growthPct: 2.4 },
+  {
+    rank: 1,
+    playerName: 'Adams, Bob',
+    bankName: 'Edward Jones',
+    trendData: '1.2,2.4,3.1',
+    growthPct: 3.1,
+  },
+  {
+    rank: 2,
+    playerName: 'Smith, Alice',
+    bankName: 'Fidelity',
+    trendData: '-0.6,0.5,2.4',
+    growthPct: 2.4,
+  },
 ];
 
 describe('MonthlyRankListComponent', () => {
@@ -58,5 +70,14 @@ describe('MonthlyRankListComponent', () => {
     expect(summary.textContent).toContain('+1.50%');
     expect(summary.textContent).toContain('S&P 500');
     expect(summary.textContent).toContain('+2.10%');
+  });
+
+  it('renders bank name under player name', () => {
+    const banks = fixture.nativeElement.querySelectorAll(
+      '.gt-rank-bank',
+    ) as NodeListOf<HTMLElement>;
+    expect(banks.length).toBe(2);
+    expect(banks[0].textContent).toContain('Edward Jones');
+    expect(banks[1].textContent).toContain('Fidelity');
   });
 });

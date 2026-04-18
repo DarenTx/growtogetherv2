@@ -1,7 +1,7 @@
 <section class="gt-card gt-rank-list" aria-label="Monthly player rankings">
   <header class="gt-rank-header">
     <h2
-      class="text-center text-xs font-semibold uppercase tracking-widest text-text-secondary mb-1"
+      class="gt-rank-title text-center text-xs font-semibold uppercase tracking-widest text-text-secondary mb-1"
     >
       {{ heading() }}
     </h2>
@@ -18,10 +18,13 @@
     </div>
 
     <ul class="gt-rank-items" role="list">
-      @for (row of rows(); track row.playerName) {
+      @for (row of rows(); track row.playerName + '|' + row.bankName) {
         <li class="gt-rank-item" [class.is-top-three]="row.rank <= 3">
           <span class="gt-rank-rank">{{ row.rank }}</span>
-          <span class="gt-rank-player">{{ row.playerName }}</span>
+          <span class="gt-rank-player">
+            <span class="gt-rank-player-name">{{ row.playerName }}</span>
+            <span class="gt-rank-bank">{{ row.bankName }}</span>
+          </span>
           <span class="gt-rank-trend gt-rank-col-mtd">
             <app-trend-label [data]="row.trendData" [showText]="false" [showIcon]="false" />
           </span>

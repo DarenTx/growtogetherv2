@@ -802,42 +802,65 @@ BEGIN
     IF p_invitation_code != 'Fruehling' THEN 
         RAISE EXCEPTION 'Invalid invitation code.'; 
     END IF;
-    
-    -- Get the work email to use for matching historical growth data.
-    SELECT COALESCE(profiles.work_email, LOWER(TRIM(p_work_email))) INTO v_work_email 
-    FROM public.profiles 
-    WHERE id = auth.uid();
+
+    -- Prefer existing profile work_email when present; otherwise use submitted work email.
+    v_work_email := COALESCE(
+        (
+            SELECT NULLIF(LOWER(TRIM(p.work_email)), '')
+            FROM public.profiles p
+            WHERE p.id = auth.uid()
+        ),
+        NULLIF(LOWER(TRIM(p_work_email)), '')
+    );
 
     v_personal_email := LOWER(TRIM(p_personal_email));
     
     -- Lock and claim growth_data rows atomically
-    WITH claimed_rows AS (
-        UPDATE public.growth_data 
-        SET user_id = auth.uid() 
-            WHERE (email_key = v_work_email OR email_key = v_personal_email)
-          AND user_id IS NULL
-        RETURNING id
-    )
-    SELECT COUNT(*) INTO v_claimed_count FROM claimed_rows;
+    UPDATE public.growth_data 
+    SET user_id = auth.uid() 
+        WHERE (
+            (v_work_email IS NOT NULL AND email_key = v_work_email)
+            OR email_key = v_personal_email
+        )
+      AND user_id IS NULL;
+
+    GET DIAGNOSTICS v_claimed_count = ROW_COUNT;
 
     IF v_claimed_count = 0 THEN
         RAISE EXCEPTION 'No unclaimed PRR data found. Either your personal or work email must match the email that receives PRR notifications.';
     END IF;
     
-    -- Update profile with registration details
-    UPDATE public.profiles 
-    SET 
-        first_name = p_first_name, 
-        last_name = p_last_name, 
-        work_email = v_work_email,
-        personal_email = v_personal_email,
+    -- Ensure profile exists and capture registration details.
+    INSERT INTO public.profiles (
+        id,
+        first_name,
+        last_name,
+        work_email,
+        personal_email,
+        personal_email_verified,
+        registration_complete
+    )
+    VALUES (
+        auth.uid(),
+        p_first_name,
+        p_last_name,
+        v_work_email,
+        v_personal_email,
+        false,
+        true
+    )
+    ON CONFLICT (id) DO UPDATE
+    SET
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        work_email = COALESCE(EXCLUDED.work_email, profiles.work_email),
+        personal_email = EXCLUDED.personal_email,
         personal_email_verified = CASE
-            WHEN profiles.personal_email IS NOT DISTINCT FROM v_personal_email
+            WHEN profiles.personal_email IS NOT DISTINCT FROM EXCLUDED.personal_email
                 THEN COALESCE(profiles.personal_email_verified, false)
             ELSE false
         END,
-        registration_complete = true
-    WHERE id = auth.uid();
+        registration_complete = true;
     
     RETURN true;
 END;
@@ -3280,7 +3303,7 @@ ALTER TABLE public.audit_logs OWNER TO postgres;
 
 CREATE TABLE public.growth_data (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    email_key text NOT NULL,
+    email_key text,
     bank_name text NOT NULL,
     year integer NOT NULL,
     month integer NOT NULL,

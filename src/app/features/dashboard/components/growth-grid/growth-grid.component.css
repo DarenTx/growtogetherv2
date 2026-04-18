@@ -6,6 +6,23 @@ th.col-month {
   text-align: right;
 }
 
+td.col-name {
+  min-width: 14rem;
+}
+
+.gt-player-name {
+  display: block;
+}
+
+.gt-bank-name {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--color-text-muted, rgb(148 163 184));
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
 .col-trend {
   width: 11rem;
 }

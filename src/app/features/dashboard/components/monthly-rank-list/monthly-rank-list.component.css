@@ -52,7 +52,25 @@
 }
 
 .gt-rank-player {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.gt-rank-player-name {
   font-weight: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gt-rank-bank {
+  color: var(--color-text-muted, rgb(148 163 184));
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

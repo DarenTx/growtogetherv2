@@ -4,6 +4,11 @@ import { AuthService } from './auth.service';
 import { ProfileService } from './profile.service';
 import { SUPABASE_CLIENT_TOKEN } from './supabase.service';
 
+interface OwnMonthlyGrowthEntry {
+  bank_name: string;
+  growth_pct: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class GrowthDataService {
   private readonly client = inject(SUPABASE_CLIENT_TOKEN);
@@ -148,6 +153,82 @@ export class GrowthDataService {
       throw error;
     }
     this.logger.debug('Growth data saved successfully');
+  }
+
+  async saveOwnGrowthDataForMonth(
+    year: number,
+    month: number,
+    entries: OwnMonthlyGrowthEntry[],
+  ): Promise<void> {
+    this.logger.debug('Saving own growth data for month in batch', year, month, entries.length);
+
+    const session = await this.auth.getSession();
+    if (!session) {
+      this.logger.error('saveOwnGrowthDataForMonth called without active session');
+      throw new Error('Not authenticated');
+    }
+
+    if (entries.length === 0) {
+      this.logger.warn('saveOwnGrowthDataForMonth called with empty entries');
+      return;
+    }
+
+    const normalizedEntries = entries
+      .map((entry) => ({
+        bank_name: entry.bank_name.trim(),
+        growth_pct: entry.growth_pct,
+      }))
+      .filter((entry) => entry.bank_name !== '');
+
+    if (normalizedEntries.length === 0) {
+      this.logger.warn('saveOwnGrowthDataForMonth had no valid bank names after normalization');
+      return;
+    }
+
+    const bankNames = normalizedEntries.map((entry) => entry.bank_name);
+
+    const { error: deleteError } = await this.client
+      .from('growth_data')
+      .delete()
+      .eq('user_id', session.user.id)
+      .eq('year', year)
+      .eq('month', month)
+      .in('bank_name', bankNames);
+
+    if (deleteError) {
+      this.logger.error('saveOwnGrowthDataForMonth delete step failed', deleteError);
+      throw deleteError;
+    }
+
+    const rowsToInsert = normalizedEntries.map((entry) => ({
+      email_key: null,
+      user_id: session.user.id,
+      year,
+      month,
+      bank_name: entry.bank_name,
+      growth_pct: entry.growth_pct,
+    }));
+
+    const { error: insertError } = await this.client.from('growth_data').insert(rowsToInsert);
+    if (insertError) {
+      const insertErrorMessage =
+        typeof insertError.message === 'string' ? insertError.message.toLowerCase() : '';
+      const isEmailKeyNotNullError =
+        insertErrorMessage.includes('null value in column "email_key"') &&
+        insertErrorMessage.includes('violates not-null constraint');
+
+      if (isEmailKeyNotNullError) {
+        this.logger.error('saveOwnGrowthDataForMonth requires migrated schema', insertError);
+        throw new Error(
+          'Database schema is out of date: growth_data.email_key must allow NULL for manual entries. Apply the latest migration in src/docs/migrations.',
+        );
+      }
+
+      this.logger.error('saveOwnGrowthDataForMonth insert step failed', insertError);
+      throw insertError;
+    }
+
+    this.logger.debug('Own growth data batch save completed successfully');
   }
 
   async getGrowthDataByEmailKey(emailKey: string): Promise<GrowthData[]> {

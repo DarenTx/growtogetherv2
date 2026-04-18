@@ -1,11 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthService } from '../../../core/services/auth.service';
 import { GrowthDataService } from '../../../core/services/growth-data.service';
-import { ProfileService } from '../../../core/services/profile.service';
 import {
   createMockAuthService,
   createMockGrowthDataService,
-  createMockProfileService,
 } from '../../../core/testing/mock-supabase.service';
 import { MonthlyGrowthEntryComponent } from './monthly-growth-entry.component';
 
@@ -25,34 +23,39 @@ describe('MonthlyGrowthEntryComponent', () => {
     mockService = {
       ...createMockAuthService(),
       ...createMockGrowthDataService(),
-      ...createMockProfileService(),
     };
 
     mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
-    mockService['getProfile'] = vi.fn().mockResolvedValue({
-      id: 'user-uuid-123',
-      first_name: 'Test',
-      last_name: 'User',
-      work_email: 'test@example.com',
-      personal_email: 'test.personal@example.com',
-      is_admin: false,
-      work_email_verified: true,
-      personal_email_verified: false,
-      registration_complete: true,
-      created_at: '2026-01-01T00:00:00Z',
-      updated_at: '2026-01-01T00:00:00Z',
-    });
-    mockService['getOwnBankNames'] = vi.fn().mockResolvedValue(['Fidelity Investments']);
-    mockService['getOwnGrowthDataForMonth'] = vi.fn().mockResolvedValue(null);
+    mockService['getOwnBankNames'] = vi
+      .fn()
+      .mockResolvedValue(['Edward Jones', 'Fidelity Investments']);
+    mockService['getOwnGrowthDataForMonth'] = vi
+      .fn()
+      .mockImplementation(async (_year: number, _month: number, bankName: string) => {
+        if (bankName === 'Fidelity Investments') {
+          return {
+            id: 'row-fidelity',
+            email_key: null,
+            user_id: 'user-uuid-123',
+            year: 2026,
+            month: 2,
+            bank_name: 'Fidelity Investments',
+            growth_pct: 2.25,
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          };
+        }
+        return null;
+      });
     mockService['saveGrowthData'] = vi.fn().mockResolvedValue(undefined);
     mockService['deleteOwnGrowthDataForMonth'] = vi.fn().mockResolvedValue(undefined);
+    mockService['saveOwnGrowthDataForMonth'] = vi.fn().mockResolvedValue(undefined);
 
     await TestBed.configureTestingModule({
       imports: [MonthlyGrowthEntryComponent],
       providers: [
         { provide: AuthService, useValue: mockService },
         { provide: GrowthDataService, useValue: mockService },
-        { provide: ProfileService, useValue: mockService },
       ],
     }).compileComponents();
   });
@@ -75,6 +78,7 @@ describe('MonthlyGrowthEntryComponent', () => {
 
   it('loads existing record using selected year/month', async () => {
     await createComponent(2026, 2);
+    expect(mockService['getOwnGrowthDataForMonth']).toHaveBeenCalledWith(2026, 2, 'Edward Jones');
     expect(mockService['getOwnGrowthDataForMonth']).toHaveBeenCalledWith(
       2026,
       2,
@@ -90,6 +94,7 @@ describe('MonthlyGrowthEntryComponent', () => {
     fixture.detectChanges();
     await flush();
 
+    expect(mockService['getOwnGrowthDataForMonth']).toHaveBeenCalledWith(2025, 2, 'Edward Jones');
     expect(mockService['getOwnGrowthDataForMonth']).toHaveBeenCalledWith(
       2025,
       2,
@@ -97,42 +102,154 @@ describe('MonthlyGrowthEntryComponent', () => {
     );
   });
 
-  it('saves growth data with selected year/month', async () => {
+  it('prefills existing values by bank', async () => {
     await createComponent(2026, 2);
-    component.growthPctControl.setValue('5.25');
 
-    await component.onSave();
-
-    expect(mockService['saveGrowthData']).toHaveBeenCalledWith({
-      email_key: 'test.personal@example.com',
-      user_id: 'user-uuid-123',
-      year: 2026,
-      month: 2,
-      bank_name: 'Fidelity Investments',
-      growth_pct: 5.25,
-    });
+    expect(component.growthByBank()['Fidelity Investments']).toBe('2.25');
+    expect(component.growthByBank()['Edward Jones']).toBe('');
   });
 
-  it('deletes growth data with selected year/month when value is blank', async () => {
+  it('does not submit until all visible banks have values', async () => {
     await createComponent(2026, 2);
-    component.growthPctControl.setValue('');
+
+    component.onGrowthInput('Fidelity Investments', {
+      target: { value: '5.25' },
+    } as unknown as Event);
 
     await component.onSave();
 
-    expect(mockService['deleteOwnGrowthDataForMonth']).toHaveBeenCalledWith(
-      2026,
-      2,
-      'Fidelity Investments',
+    expect(component.errorMessage()).toContain('all listed banks');
+    expect(mockService['saveOwnGrowthDataForMonth']).not.toHaveBeenCalled();
+  });
+
+  it('saves all bank values together with selected year/month', async () => {
+    await createComponent(2026, 2);
+    component.onGrowthInput('Fidelity Investments', {
+      target: { value: '5.25' },
+    } as unknown as Event);
+    component.onGrowthInput('Edward Jones', { target: { value: '1.10' } } as unknown as Event);
+
+    await component.onSave();
+
+    expect(mockService['saveOwnGrowthDataForMonth']).toHaveBeenCalledWith(2026, 2, [
+      {
+        bank_name: 'Edward Jones',
+        growth_pct: 1.1,
+      },
+      {
+        bank_name: 'Fidelity Investments',
+        growth_pct: 5.25,
+      },
+    ]);
+  });
+
+  it('rejects invalid numeric input for any bank', async () => {
+    await createComponent(2026, 2);
+    component.onGrowthInput('Fidelity Investments', {
+      target: { value: 'abc' },
+    } as unknown as Event);
+    component.onGrowthInput('Edward Jones', { target: { value: '1.10' } } as unknown as Event);
+
+    await component.onSave();
+
+    expect(component.errorMessage()).toContain('Fidelity Investments');
+    expect(mockService['saveOwnGrowthDataForMonth']).not.toHaveBeenCalled();
+  });
+
+  it('clears banners on input edits', async () => {
+    await createComponent(2026, 2);
+    component.errorMessage.set('Some error');
+    component.successMessage.set('Some success');
+
+    component.onGrowthInput('Fidelity Investments', {
+      target: { value: '3.00' },
+    } as unknown as Event);
+
+    expect(component.errorMessage()).toBe('');
+    expect(component.successMessage()).toBe('');
+  });
+
+  it('enables submission only when all bank inputs are non-empty', async () => {
+    await createComponent(2026, 2);
+
+    expect(component.canSubmit()).toBe(false);
+
+    component.onGrowthInput('Fidelity Investments', {
+      target: { value: '5.25' },
+    } as unknown as Event);
+    expect(component.canSubmit()).toBe(false);
+
+    component.onGrowthInput('Edward Jones', { target: { value: '1.10' } } as unknown as Event);
+    expect(component.canSubmit()).toBe(true);
+  });
+
+  it('does not call legacy per-bank save or delete on submit', async () => {
+    await createComponent(2026, 2);
+    component.onGrowthInput('Fidelity Investments', {
+      target: { value: '5.25' },
+    } as unknown as Event);
+    component.onGrowthInput('Edward Jones', { target: { value: '1.10' } } as unknown as Event);
+
+    await component.onSave();
+
+    expect(mockService['saveGrowthData']).not.toHaveBeenCalled();
+    expect(mockService['deleteOwnGrowthDataForMonth']).not.toHaveBeenCalled();
+  });
+
+  it('keeps manual rows off email_key by delegating to batch service', async () => {
+    await createComponent(2026, 2);
+    component.onGrowthInput('Fidelity Investments', {
+      target: { value: '5.25' },
+    } as unknown as Event);
+    component.onGrowthInput('Edward Jones', { target: { value: '1.10' } } as unknown as Event);
+
+    await component.onSave();
+
+    expect(mockService['saveOwnGrowthDataForMonth']).toHaveBeenCalledWith(2026, 2, [
+      {
+        bank_name: 'Edward Jones',
+        growth_pct: 1.1,
+      },
+      {
+        bank_name: 'Fidelity Investments',
+        growth_pct: 5.25,
+      },
+    ]);
+    expect(mockService['saveGrowthData']).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        email_key: expect.any(String),
+      }),
     );
   });
 
-  it('rejects invalid numeric input', async () => {
+  it('handles empty bank list by preventing submit', async () => {
+    mockService['getOwnBankNames'].mockResolvedValueOnce([]);
     await createComponent(2026, 2);
-    component.growthPctControl.setValue('abc');
 
     await component.onSave();
 
-    expect(component.errorMessage()).toContain('valid number');
-    expect(mockService['saveGrowthData']).not.toHaveBeenCalled();
+    expect(component.errorMessage()).toContain('No banks available');
+    expect(component.canSubmit()).toBe(false);
+  });
+
+  it('passes year and month unchanged to batch save', async () => {
+    await createComponent(2024, 12);
+    component.onGrowthInput('Fidelity Investments', {
+      target: { value: '5.25' },
+    } as unknown as Event);
+    component.onGrowthInput('Edward Jones', { target: { value: '1.10' } } as unknown as Event);
+
+    await component.onSave();
+
+    expect(mockService['saveOwnGrowthDataForMonth']).toHaveBeenCalledWith(2024, 12, [
+      {
+        bank_name: 'Edward Jones',
+        growth_pct: 1.1,
+      },
+      {
+        bank_name: 'Fidelity Investments',
+        growth_pct: 5.25,
+      },
+    ]);
   });
 });

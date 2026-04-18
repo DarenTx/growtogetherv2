@@ -84,6 +84,11 @@ export class GrowthGridComponent {
           const fb = b.firstName.toLowerCase();
           cmp = fa < fb ? -1 : fa > fb ? 1 : 0;
         }
+        if (cmp === 0) {
+          const ba = a.bankName.toLowerCase();
+          const bb = b.bankName.toLowerCase();
+          cmp = ba < bb ? -1 : ba > bb ? 1 : 0;
+        }
       } else {
         const idx = parseInt(col.replace('month-', ''), 10);
         const va = a.months[idx];

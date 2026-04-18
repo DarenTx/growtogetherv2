@@ -68,6 +68,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private readonly allProfiles = signal<Profile[]>([]);
   private readonly growthData = signal<GrowthData[]>([]);
+  private readonly ownBankNames = signal<string[]>([]);
   private readonly marketIndexes = signal<MarketIndex[]>([]);
 
   readonly loading = signal(true);
@@ -105,7 +106,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return true;
     }
 
-    const emailKey = row.email_key.toLowerCase();
+    const emailKey = row.email_key?.toLowerCase();
+    if (!emailKey) {
+      return false;
+    }
+
     const personalEmail = profile.personal_email?.toLowerCase();
     if (personalEmail && emailKey === personalEmail) {
       return true;
@@ -130,6 +135,46 @@ export class DashboardComponent implements OnInit, OnDestroy {
     );
   });
 
+  readonly hasAllSelectedMonthBankData = computed(() => {
+    const profile = this.profile();
+    if (!profile?.id) {
+      return false;
+    }
+
+    const selectedYear = this.selectedYear();
+    const selectedMonth = this.selectedMonth();
+    const source = this.growthData();
+
+    const recordedBanks = new Set(
+      source
+        .filter(
+          (row) =>
+            this.matchesProfileGrowthRow(profile, row) &&
+            row.year === selectedYear &&
+            row.month === selectedMonth,
+        )
+        .map((row) => row.bank_name.trim().toLowerCase()),
+    );
+
+    const requiredBanks = new Set(
+      this.ownBankNames()
+        .map((bankName) => bankName.trim().toLowerCase())
+        .filter((bankName) => bankName !== ''),
+    );
+
+    if (requiredBanks.size === 0) {
+      return recordedBanks.size > 0;
+    }
+
+    for (const bankName of requiredBanks) {
+      if (!recordedBanks.has(bankName)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
   readonly isPastSelectedMonth = computed(() => {
     const selectedYear = this.selectedYear();
     const selectedMonth = this.selectedMonth();
@@ -138,7 +183,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return selectedMonth < CURRENT_MONTH;
   });
 
-  readonly showGrowthEntry = computed(() => this.isPastSelectedMonth() && !this.hasPrevMonthData());
+  readonly showGrowthEntry = computed(
+    () => this.isPastSelectedMonth() && !this.hasAllSelectedMonthBankData(),
+  );
 
   readonly monthlyRankRows = computed<MonthlyRankRow[]>(() => {
     const selectedYear = this.selectedYear();
@@ -160,45 +207,69 @@ export class DashboardComponent implements OnInit, OnDestroy {
       }
     }
 
-    const perProfileRows = new Map<string, GrowthData[]>();
+    const perProfileBankRows = new Map<
+      string,
+      { profile: Profile; bankName: string; rows: GrowthData[] }
+    >();
     for (const row of growthData) {
       if (row.year !== selectedYear || row.month > selectedMonth) {
         continue;
       }
 
+      const emailKey = row.email_key?.toLowerCase();
       const profile = row.user_id
         ? profileById.get(row.user_id)
-        : profileByEmail.get(row.email_key.toLowerCase());
+        : emailKey
+          ? profileByEmail.get(emailKey)
+          : undefined;
       if (!profile) {
         continue;
       }
 
-      if (!perProfileRows.has(profile.id)) {
-        perProfileRows.set(profile.id, []);
+      const bankName = row.bank_name.trim();
+      const profileBankKey = `${profile.id}::${bankName.toLowerCase()}`;
+      if (!perProfileBankRows.has(profileBankKey)) {
+        perProfileBankRows.set(profileBankKey, {
+          profile,
+          bankName: bankName || row.bank_name,
+          rows: [],
+        });
       }
-      perProfileRows.get(profile.id)!.push(row);
+      perProfileBankRows.get(profileBankKey)!.rows.push(row);
     }
 
-    const rowsForSelectedMonth = Array.from(perProfileRows.values())
-      .map((rows) => {
-        const monthRows = rows
-          .filter((row) => row.month === selectedMonth)
-          .sort((a, b) => a.bank_name.localeCompare(b.bank_name));
-        return monthRows[0] ?? null;
+    const rowsForSelectedMonth = Array.from(perProfileBankRows.values())
+      .map((group) => {
+        const monthRows = group.rows.filter((row) => row.month === selectedMonth);
+        if (monthRows.length === 0) {
+          return null;
+        }
+        const monthRow = monthRows[0];
+        return {
+          profile: group.profile,
+          bankName: group.bankName,
+          monthRow,
+          trendRows: group.rows,
+        };
       })
-      .filter((row): row is GrowthData => row !== null)
-      .sort((a, b) => b.growth_pct - a.growth_pct);
+      .filter(
+        (
+          group,
+        ): group is {
+          profile: Profile;
+          bankName: string;
+          monthRow: GrowthData;
+          trendRows: GrowthData[];
+        } => group !== null,
+      )
+      .sort((a, b) => b.monthRow.growth_pct - a.monthRow.growth_pct);
 
-    return rowsForSelectedMonth.map((row, index) => {
-      const profile = row.user_id
-        ? profileById.get(row.user_id)
-        : profileByEmail.get(row.email_key.toLowerCase());
-      const displayName = profile
-        ? `${profile.last_name ?? ''}, ${profile.first_name ?? ''}`.trim().replace(/^,\s*/, '')
-        : row.email_key;
+    return rowsForSelectedMonth.map((group, index) => {
+      const displayName = `${group.profile.last_name ?? ''}, ${group.profile.first_name ?? ''}`
+        .trim()
+        .replace(/^,\s*/, '');
 
-      const profileRows = profile ? (perProfileRows.get(profile.id) ?? []) : [];
-      const monthlyTrendRows = profileRows
+      const monthlyTrendRows = group.trendRows
         .sort((a, b) => a.month - b.month)
         .filter((r) => r.month <= selectedMonth);
 
@@ -212,8 +283,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return {
         rank: index + 1,
         playerName: displayName,
+        bankName: group.bankName,
         trendData: Array.from(monthValues.values()).join(','),
-        growthPct: row.growth_pct,
+        growthPct: group.monthRow.growth_pct,
       };
     });
   });
@@ -246,15 +318,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.errorMessage.set(null);
     try {
-      const [ownProfile, allProfiles, growthData, marketIndexes] = await Promise.all([
+      const [ownProfile, allProfiles, growthData, ownBankNames, marketIndexes] = await Promise.all([
         this.profileService.getProfile(),
         this.adminService.getAllProfiles(),
         this.growthDataService.getGrowthDataForYear(this.selectedYear()),
+        this.growthDataService.getOwnBankNames(),
         this.marketDataService.getMarketIndexesForMonth(this.selectedYear(), this.selectedMonth()),
       ]);
       this.profile.set(ownProfile);
       this.allProfiles.set(allProfiles);
       this.growthData.set(growthData);
+      this.ownBankNames.set([...new Set(ownBankNames)]);
       this.marketIndexes.set(marketIndexes);
     } catch (err: unknown) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Failed to load dashboard data.');

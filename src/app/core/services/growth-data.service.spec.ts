@@ -6,8 +6,10 @@ import { SUPABASE_CLIENT_TOKEN } from './supabase.service';
 const mockChain = {
   select: vi.fn(),
   eq: vi.fn(),
+  in: vi.fn(),
   limit: vi.fn(),
   delete: vi.fn(),
+  insert: vi.fn(),
   order: vi.fn(),
   upsert: vi.fn(),
   not: vi.fn(),
@@ -143,6 +145,87 @@ describe('GrowthDataService', () => {
       await expect(
         service.deleteOwnGrowthDataForMonth(2025, 12, 'Fidelity Investments'),
       ).rejects.toThrow('Not authenticated');
+    });
+  });
+
+  describe('saveOwnGrowthDataForMonth', () => {
+    it('deletes existing month rows for user and inserts null-email replacements', async () => {
+      mockChain.delete.mockReturnValue(mockChain);
+      mockChain.eq
+        .mockReturnValueOnce(mockChain) // eq('user_id', ...)
+        .mockReturnValueOnce(mockChain) // eq('year', ...)
+        .mockReturnValueOnce(mockChain); // eq('month', ...)
+      mockChain.in.mockResolvedValueOnce({ error: null });
+      mockChain.insert.mockResolvedValueOnce({ error: null });
+
+      await service.saveOwnGrowthDataForMonth(2025, 12, [
+        { bank_name: 'Fidelity Investments', growth_pct: 4.25 },
+        { bank_name: 'Edward Jones', growth_pct: 1.5 },
+      ]);
+
+      expect(mockChain.in).toHaveBeenCalledWith('bank_name', [
+        'Fidelity Investments',
+        'Edward Jones',
+      ]);
+      expect(mockChain.insert).toHaveBeenCalledWith([
+        {
+          email_key: null,
+          user_id: 'u1',
+          year: 2025,
+          month: 12,
+          bank_name: 'Fidelity Investments',
+          growth_pct: 4.25,
+        },
+        {
+          email_key: null,
+          user_id: 'u1',
+          year: 2025,
+          month: 12,
+          bank_name: 'Edward Jones',
+          growth_pct: 1.5,
+        },
+      ]);
+    });
+
+    it('throws when not authenticated', async () => {
+      vi.spyOn(authService, 'getSession').mockResolvedValue(null);
+
+      await expect(
+        service.saveOwnGrowthDataForMonth(2025, 12, [
+          { bank_name: 'Fidelity Investments', growth_pct: 4.25 },
+        ]),
+      ).rejects.toThrow('Not authenticated');
+    });
+
+    it('throws when delete step fails', async () => {
+      mockChain.delete.mockReturnValue(mockChain);
+      mockChain.eq
+        .mockReturnValueOnce(mockChain)
+        .mockReturnValueOnce(mockChain)
+        .mockReturnValueOnce(mockChain);
+      mockChain.in.mockResolvedValueOnce({ error: new Error('Delete failed') });
+
+      await expect(
+        service.saveOwnGrowthDataForMonth(2025, 12, [
+          { bank_name: 'Fidelity Investments', growth_pct: 4.25 },
+        ]),
+      ).rejects.toThrow('Delete failed');
+    });
+
+    it('throws when insert step fails', async () => {
+      mockChain.delete.mockReturnValue(mockChain);
+      mockChain.eq
+        .mockReturnValueOnce(mockChain)
+        .mockReturnValueOnce(mockChain)
+        .mockReturnValueOnce(mockChain);
+      mockChain.in.mockResolvedValueOnce({ error: null });
+      mockChain.insert.mockResolvedValueOnce({ error: new Error('Insert failed') });
+
+      await expect(
+        service.saveOwnGrowthDataForMonth(2025, 12, [
+          { bank_name: 'Fidelity Investments', growth_pct: 4.25 },
+        ]),
+      ).rejects.toThrow('Insert failed');
     });
   });
 

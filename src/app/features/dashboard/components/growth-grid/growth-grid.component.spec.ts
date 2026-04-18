@@ -7,12 +7,14 @@ const MOCK_ROWS: DashboardRow[] = [
     profileId: 'p1',
     firstName: 'Alice',
     lastName: 'Smith',
+    bankName: 'Fidelity',
     months: [1.5, null, 2.0, null, null, null, null, null, null, null, null, null],
   },
   {
     profileId: 'p2',
     firstName: 'Bob',
     lastName: 'Adams',
+    bankName: 'Edward Jones',
     months: [null, -0.5, null, 3.0, null, null, null, null, null, null, null, null],
   },
 ];
@@ -113,5 +115,14 @@ describe('GrowthGridComponent', () => {
 
   it('shows no sort indicator on inactive column', () => {
     expect(component.sortIndicator('month-0')).toBe('');
+  });
+
+  it('renders muted bank name under each player name', () => {
+    const banks = fixture.nativeElement.querySelectorAll(
+      '.gt-bank-name',
+    ) as NodeListOf<HTMLElement>;
+    expect(banks.length).toBe(2);
+    expect(banks[0].textContent).toContain('Edward Jones');
+    expect(banks[1].textContent).toContain('Fidelity');
   });
 });

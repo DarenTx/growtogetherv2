@@ -1,6 +1,6 @@
 export interface GrowthData {
   id: string;
-  email_key: string;
+  email_key: string | null;
   bank_name: string;
   year: number;
   month: number;

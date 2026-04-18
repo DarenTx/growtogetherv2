@@ -4,6 +4,7 @@ import { TrendLabelComponent } from '../../../../shared/components/trend-label/t
 export interface MonthlyRankRow {
   rank: number;
   playerName: string;
+  bankName: string;
   trendData: string;
   growthPct: number;
 }

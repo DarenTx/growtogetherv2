@@ -122,33 +122,65 @@ export class YearlyDashboardComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Build lookup: profile id to month index (0-based) to first growth_pct seen
-    const lookup = new Map<string, Map<number, number>>();
+    // Build lookup: profile id + bank to month index (0-based) to first growth_pct seen.
+    const lookup = new Map<
+      string,
+      { profileId: string; bankName: string; monthMap: Map<number, number> }
+    >();
     for (const gd of growthData) {
+      const emailKey = gd.email_key?.toLowerCase();
       const key = gd.user_id
         ? gd.user_id
-        : (personalEmailToProfileId.get(gd.email_key.toLowerCase()) ??
-          workEmailToProfileId.get(gd.email_key.toLowerCase()));
+        : emailKey
+          ? (personalEmailToProfileId.get(emailKey) ?? workEmailToProfileId.get(emailKey))
+          : undefined;
       if (!key) {
         continue;
       }
 
-      if (!lookup.has(key)) {
-        lookup.set(key, new Map<number, number>());
+      const bankName = gd.bank_name?.trim() ?? '';
+      const profileBankKey = `${key}::${bankName.toLowerCase()}`;
+      if (!lookup.has(profileBankKey)) {
+        lookup.set(profileBankKey, {
+          profileId: key,
+          bankName,
+          monthMap: new Map<number, number>(),
+        });
       }
-      const monthMap = lookup.get(key)!;
+      const monthMap = lookup.get(profileBankKey)!.monthMap;
       const idx = gd.month - 1;
       if (!monthMap.has(idx)) monthMap.set(idx, gd.growth_pct);
     }
 
-    return profiles.map((p) => ({
-      profileId: p.id,
-      firstName: p.first_name ?? '',
-      lastName: p.last_name ?? '',
-      months: Array.from({ length: 12 }, (_, i) => {
-        return lookup.get(p.id)?.get(i) ?? null;
-      }),
-    }));
+    const rows: DashboardRow[] = [];
+    for (const profile of profiles) {
+      const profileBankGroups = Array.from(lookup.values()).filter(
+        (group) => group.profileId === profile.id,
+      );
+
+      if (profileBankGroups.length === 0) {
+        rows.push({
+          profileId: profile.id,
+          firstName: profile.first_name ?? '',
+          lastName: profile.last_name ?? '',
+          bankName: '',
+          months: Array.from({ length: 12 }, () => null),
+        });
+        continue;
+      }
+
+      for (const group of profileBankGroups) {
+        rows.push({
+          profileId: profile.id,
+          firstName: profile.first_name ?? '',
+          lastName: profile.last_name ?? '',
+          bankName: group.bankName,
+          months: Array.from({ length: 12 }, (_, i) => group.monthMap.get(i) ?? null),
+        });
+      }
+    }
+
+    return rows;
   });
 
   async ngOnInit(): Promise<void> {

@@ -180,8 +180,8 @@ describe('ClassicScorecardComponent', () => {
     });
 
     it('shows card title', () => {
-      const el = fixture.nativeElement as HTMLElement;
-      expect(el.textContent).toContain('June 2025');
+      const card = fixture.nativeElement.querySelector('.gt-card') as HTMLElement | null;
+      expect(card?.getAttribute('aria-label')).toContain('June 2025');
     });
 
     it('displays growth percentage', () => {
