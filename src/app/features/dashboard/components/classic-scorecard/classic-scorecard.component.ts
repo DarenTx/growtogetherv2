@@ -13,10 +13,10 @@ import {
 import { GrowthData } from '../../../../core/models/growth-data.interface';
 import { MarketIndex } from '../../../../core/models/market-index.interface';
 import { Profile } from '../../../../core/models/profile.interface';
+import { AdminService } from '../../../../core/services/admin.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { GrowthDataService } from '../../../../core/services/growth-data.service';
 import { MarketDataService } from '../../../../core/services/market-data.service';
-import { ProfileService } from '../../../../core/services/profile.service';
 import { TrendLabelComponent } from '../../../../shared/components/trend-label/trend-label.component';
 
 export type ScorecardState = 'loading' | 'error' | 'no-data' | 'historical';
@@ -34,7 +34,7 @@ export class ClassicScorecardComponent implements OnInit {
   // ── Injected services ──────────────────────────────────────────────────────
   private readonly growthDataService = inject(GrowthDataService);
   private readonly marketDataService = inject(MarketDataService);
-  private readonly profileService = inject(ProfileService);
+  private readonly adminService = inject(AdminService);
   private readonly authService = inject(AuthService);
   private readonly injector = inject(Injector);
 
@@ -310,7 +310,7 @@ export class ClassicScorecardComponent implements OnInit {
       // user_id first and email-key fallback for null-user placeholder rows.
       const [allYearData, profiles] = await Promise.all([
         this.growthDataService.getGrowthDataForYear(loadedYear),
-        this.profileService.getRegisteredProfiles(),
+        this.adminService.getAllProfiles(),
       ]);
 
       const viewedProfile = profiles.find((p) => p.id === this.uuid()) ?? null;

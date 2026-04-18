@@ -42,9 +42,9 @@ describe('MonthlyRankListComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('renders heading with selected month and year', () => {
+  it('renders static heading', () => {
     const heading = fixture.nativeElement.querySelector('.gt-rank-title') as HTMLElement;
-    expect(heading.textContent).toContain('March 2026 Rankings');
+    expect(heading.textContent).toContain('Player Rankings');
   });
 
   it('renders list rows instead of a table', () => {

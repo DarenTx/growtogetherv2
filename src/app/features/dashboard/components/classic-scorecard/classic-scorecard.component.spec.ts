@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AdminService } from '../../../../core/services/admin.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { GrowthData } from '../../../../core/models/growth-data.interface';
 import { MarketIndex } from '../../../../core/models/market-index.interface';
 import { Profile } from '../../../../core/models/profile.interface';
 import { GrowthDataService } from '../../../../core/services/growth-data.service';
 import { MarketDataService } from '../../../../core/services/market-data.service';
-import { ProfileService } from '../../../../core/services/profile.service';
 import {
   MOCK_SESSION,
+  createMockAdminService,
   createMockAuthService,
   createMockGrowthDataService,
   createMockMarketDataService,
-  createMockProfileService,
 } from '../../../../core/testing/mock-supabase.service';
 import { ClassicScorecardComponent } from './classic-scorecard.component';
 
@@ -78,7 +78,7 @@ describe('ClassicScorecardComponent', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockMarketData: Record<string, any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockProfile: Record<string, any>;
+  let mockAdmin: Record<string, any>;
 
   async function setupComponent(
     year = 2025,
@@ -99,16 +99,16 @@ describe('ClassicScorecardComponent', () => {
     mockAuth = createMockAuthService();
     mockGrowthData = createMockGrowthDataService();
     mockMarketData = createMockMarketDataService();
-    mockProfile = createMockProfileService();
-    mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
+    mockAdmin = createMockAdminService();
+    mockAdmin['getAllProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
 
     await TestBed.configureTestingModule({
       imports: [ClassicScorecardComponent],
       providers: [
         { provide: AuthService, useValue: mockAuth },
+        { provide: AdminService, useValue: mockAdmin },
         { provide: GrowthDataService, useValue: mockGrowthData },
         { provide: MarketDataService, useValue: mockMarketData },
-        { provide: ProfileService, useValue: mockProfile },
       ],
     }).compileComponents();
   });
@@ -166,7 +166,7 @@ describe('ClassicScorecardComponent', () => {
           makeMarketIndex({ index_name: 'Dow Jones', growth_pct: 1.5 }),
           makeMarketIndex({ id: 'mi-2', index_name: 'S&P 500', growth_pct: 2.1 }),
         ]);
-      mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
+      mockAdmin['getAllProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
       mockGrowthData['getGrowthDataForYearMonth'] = vi
         .fn()
         .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 2.38 })]);
@@ -342,7 +342,7 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('de-duplicates by user_id taking first by bank_name', async () => {
-        mockProfile['getRegisteredProfiles'] = vi
+        mockAdmin['getAllProfiles'] = vi
           .fn()
           .mockResolvedValue([
             makeProfile({ id: 'u1', work_email: 'u1@example.com' }),
@@ -364,7 +364,7 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('keeps only rows that resolve to registered profiles', async () => {
-        mockProfile['getRegisteredProfiles'] = vi
+        mockAdmin['getAllProfiles'] = vi
           .fn()
           .mockResolvedValue([
             makeProfile({ id: MOCK_SESSION.user.id, work_email: 'user@example.com' }),
@@ -390,7 +390,7 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('calculates mean correctly', async () => {
-        mockProfile['getRegisteredProfiles'] = vi
+        mockAdmin['getAllProfiles'] = vi
           .fn()
           .mockResolvedValue([
             makeProfile({ id: 'u1', work_email: 'u1@example.com' }),
@@ -414,7 +414,7 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('returns 1 for highest growth', async () => {
-        mockProfile['getRegisteredProfiles'] = vi
+        mockAdmin['getAllProfiles'] = vi
           .fn()
           .mockResolvedValue([
             makeProfile({ id: MOCK_SESSION.user.id, work_email: 'user@example.com' }),
@@ -436,7 +436,7 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('returns correct rank for middle position', async () => {
-        mockProfile['getRegisteredProfiles'] = vi
+        mockAdmin['getAllProfiles'] = vi
           .fn()
           .mockResolvedValue([
             makeProfile({ id: MOCK_SESSION.user.id, work_email: 'user@example.com' }),
@@ -464,7 +464,7 @@ describe('ClassicScorecardComponent', () => {
         const rows = Array.from({ length: 3 }, (_, i) =>
           makeGrowthRecord({ user_id: `u${i}`, growth_pct: i + 1.0 }),
         );
-        mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue(profiles);
+        mockAdmin['getAllProfiles'] = vi.fn().mockResolvedValue(profiles);
         mockGrowthData['getGrowthDataForYearMonth'] = vi.fn().mockResolvedValue(rows);
         await setupComponent(2025, 6);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -524,7 +524,7 @@ describe('ClassicScorecardComponent', () => {
 
     describe('viewedUserProfile', () => {
       it('finds the profile matching the uuid', async () => {
-        mockProfile['getRegisteredProfiles'] = vi
+        mockAdmin['getAllProfiles'] = vi
           .fn()
           .mockResolvedValue([makeProfile({ first_name: 'Alice' })]);
         await setupComponent(2025, 6);
@@ -532,7 +532,7 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('returns null when uuid not in profiles', async () => {
-        mockProfile['getRegisteredProfiles'] = vi
+        mockAdmin['getAllProfiles'] = vi
           .fn()
           .mockResolvedValue([makeProfile({ id: 'other-uuid' })]);
         await setupComponent(2025, 6);
@@ -542,13 +542,13 @@ describe('ClassicScorecardComponent', () => {
 
     describe('cardAriaLabel', () => {
       it('returns Scorecard when profile not found', async () => {
-        mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue([]);
+        mockAdmin['getAllProfiles'] = vi.fn().mockResolvedValue([]);
         await setupComponent(2025, 6);
         expect(component.cardAriaLabel()).toBe('Scorecard');
       });
 
       it('includes name and month/year when profile found', async () => {
-        mockProfile['getRegisteredProfiles'] = vi
+        mockAdmin['getAllProfiles'] = vi
           .fn()
           .mockResolvedValue([makeProfile({ first_name: 'Jane', last_name: 'Smith' })]);
         await setupComponent(2025, 6);
@@ -677,7 +677,7 @@ describe('ClassicScorecardComponent', () => {
       mockMarketData['getMarketIndexesForMonth'] = vi
         .fn()
         .mockResolvedValue([makeMarketIndex({ index_name: 'Dow Jones', growth_pct: 1.5 })]);
-      mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
+      mockAdmin['getAllProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
       mockGrowthData['getGrowthDataForYearMonth'] = vi
         .fn()
         .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 2.38 })]);

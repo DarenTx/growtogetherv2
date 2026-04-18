@@ -24,13 +24,6 @@ export class MonthlyRankListComponent {
   readonly dowGrowthPct = input<number | null>(null);
   readonly sp500GrowthPct = input<number | null>(null);
 
-  readonly heading = computed(() => {
-    const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(
-      new Date(this.selectedYear(), this.selectedMonth() - 1, 1),
-    );
-    return `${monthName} ${this.selectedYear()} Rankings`;
-  });
-
   formatPct(value: number): string {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   }
