@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProfileService } from '../../../core/services/profile.service';
 import {
@@ -16,23 +16,26 @@ describe('AuthCallbackComponent', () => {
   let component: AuthCallbackComponent;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockService: Record<string, any>;
-  let router: Router;
+  let mockNavigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    // In JSDOM, window.opener is `undefined` (not null), which makes isPopupContext return
+    // true (undefined !== null). Set opener to null so the component uses the normal
+    // navigation path instead of the popup path (which calls window.close()).
+    Object.defineProperty(window, 'opener', { value: null, configurable: true, writable: true });
+
+    mockNavigate = vi.fn().mockResolvedValue(true);
     mockService = { ...createMockAuthService(), ...createMockProfileService() };
-    // Prevent immediate navigation in NgOnInit during setup
+    // Prevent navigation during setup (checkExistingSession returns early when no session)
     mockService['getSession'] = vi.fn().mockResolvedValue(null);
     mockService['onAuthStateChange'] = vi.fn().mockReturnValue({ unsubscribe: vi.fn() });
 
     await TestBed.configureTestingModule({
       imports: [AuthCallbackComponent],
       providers: [
-        provideRouter([
-          { path: 'dashboard', component: AuthCallbackComponent },
-          { path: 'register', component: AuthCallbackComponent },
-          { path: 'login', component: AuthCallbackComponent },
-          { path: 'auth/link-expired', component: AuthCallbackComponent },
-        ]),
+        // Mock the Router directly so navigate calls are captured without the Angular
+        // router's async initial navigation interfering with the spy.
+        { provide: Router, useValue: { navigate: mockNavigate } },
         { provide: AuthService, useValue: mockService },
         { provide: ProfileService, useValue: mockService },
       ],
@@ -40,8 +43,15 @@ describe('AuthCallbackComponent', () => {
 
     fixture = TestBed.createComponent(AuthCallbackComponent);
     component = fixture.componentInstance;
-    router = TestBed.inject(Router);
-    vi.spyOn(router, 'navigate').mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    // Remove the own property so the prototype's default (undefined) is restored
+    try {
+      delete (window as any).opener;
+    } catch {
+      // ignore
+    }
   });
 
   it('creates the component', () => {
@@ -60,47 +70,49 @@ describe('AuthCallbackComponent', () => {
     mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
     mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE);
     fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockNavigate).toHaveBeenCalledWith(['/dashboard']);
   });
 
   it('navigates to /register when registration is incomplete', async () => {
     mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
     mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_INCOMPLETE);
     fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(router.navigate).toHaveBeenCalledWith(['/register']);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockNavigate).toHaveBeenCalledWith(['/register']);
   });
 
   it('navigates to /register when profile is null', async () => {
     mockService['getSession'] = vi.fn().mockResolvedValue(MOCK_SESSION);
     mockService['getProfile'] = vi.fn().mockResolvedValue(null);
     fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(router.navigate).toHaveBeenCalledWith(['/register']);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockNavigate).toHaveBeenCalledWith(['/register']);
   });
 
   it('navigates to link-expired when URL contains error=access_denied', async () => {
-    // Simulate an expired link URL
-    Object.defineProperty(window, 'location', {
-      value: { href: 'http://localhost/auth/callback?error=access_denied&error_code=otp_expired' },
-      writable: true,
-    });
-    mockService['getSession'] = vi.fn().mockResolvedValue(null);
-    fixture.detectChanges();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(router.navigate).toHaveBeenCalledWith(['/auth/link-expired']);
-    // Restore
-    Object.defineProperty(window, 'location', {
-      value: { href: 'http://localhost/' },
-      writable: true,
-    });
+    // Use history.pushState to set the URL without replacing the Location object,
+    // which would corrupt JSDOM's internal state for subsequent tests.
+    const originalHref = window.location.href;
+    window.history.pushState(
+      {},
+      '',
+      '/auth/callback?error=access_denied&error_code=otp_expired',
+    );
+    try {
+      mockService['getSession'] = vi.fn().mockResolvedValue(null);
+      fixture.detectChanges();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockNavigate).toHaveBeenCalledWith(['/auth/link-expired']);
+    } finally {
+      window.history.pushState({}, '', originalHref);
+    }
   });
 
-  it('goToLogin navigates to /login', async () => {
+  it('goToLogin navigates to /login', () => {
     fixture.detectChanges();
     component.goToLogin();
-    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+    expect(mockNavigate).toHaveBeenCalledWith(['/login']);
   });
 
   it('unsubscribes from auth state on destroy', () => {
@@ -111,3 +123,4 @@ describe('AuthCallbackComponent', () => {
     expect(unsubSpy).toHaveBeenCalled();
   });
 });
+

@@ -50,6 +50,8 @@
 <!-- Nav menu (shown when open) -->
 @if (menuOpen()) {
   <nav class="gt-dh-menu" aria-label="Dashboard navigation">
+    <a routerLink="/dashboard" class="gt-dh-link" (click)="closeMenu()">Monthly Dashboard</a>
+    <a routerLink="/dashboard/yearly" class="gt-dh-link" (click)="closeMenu()">Yearly Dashboard</a>
     @if (isAdmin()) {
       <a routerLink="/admin/profiles" class="gt-dh-link" (click)="closeMenu()">Profiles</a>
       <a routerLink="/admin/market-data" class="gt-dh-link" (click)="closeMenu()">Market Data</a>

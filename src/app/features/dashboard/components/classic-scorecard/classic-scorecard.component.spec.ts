@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthService } from '../../../../core/services/auth.service';
 import { GrowthData } from '../../../../core/models/growth-data.interface';
 import { MarketIndex } from '../../../../core/models/market-index.interface';
@@ -100,6 +100,7 @@ describe('ClassicScorecardComponent', () => {
     mockGrowthData = createMockGrowthDataService();
     mockMarketData = createMockMarketDataService();
     mockProfile = createMockProfileService();
+    mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
 
     await TestBed.configureTestingModule({
       imports: [ClassicScorecardComponent],
@@ -127,9 +128,9 @@ describe('ClassicScorecardComponent', () => {
 
   describe('loading state', () => {
     it('starts in loading state', async () => {
-      // Block getGrowthDataForUserYear so it stays in loading state
+      // Block getGrowthDataForYear so it stays in loading state
       let resolve!: (v: GrowthData[]) => void;
-      mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockReturnValue(
+      mockGrowthData['getGrowthDataForYear'] = vi.fn().mockReturnValue(
         new Promise<GrowthData[]>((r) => {
           resolve = r;
         }),
@@ -156,7 +157,7 @@ describe('ClassicScorecardComponent', () => {
 
   describe('historical state (past month)', () => {
     beforeEach(async () => {
-      mockGrowthData['getGrowthDataForUserYear'] = vi
+      mockGrowthData['getGrowthDataForYear'] = vi
         .fn()
         .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 2.38 })]);
       mockMarketData['getMarketIndexesForMonth'] = vi
@@ -180,7 +181,7 @@ describe('ClassicScorecardComponent', () => {
 
     it('shows card title', () => {
       const el = fixture.nativeElement as HTMLElement;
-      expect(el.textContent).toContain('2025 - Thru June');
+      expect(el.textContent).toContain('June 2025');
     });
 
     it('displays growth percentage', () => {
@@ -190,12 +191,12 @@ describe('ClassicScorecardComponent', () => {
 
     it('shows Dow vs label', () => {
       const el = fixture.nativeElement as HTMLElement;
-      expect(el.textContent).toContain('vs Dow');
+      expect(el.textContent).toContain('Dow');
     });
 
     it('shows S&P 500 vs label', () => {
       const el = fixture.nativeElement as HTMLElement;
-      expect(el.textContent).toContain('vs S&P 500');
+      expect(el.textContent).toContain('S&P 500');
     });
 
     it('shows rank', () => {
@@ -214,134 +215,11 @@ describe('ClassicScorecardComponent', () => {
     });
   });
 
-  // ── Current-data state ──────────────────────────────────────────────────────
-
-  describe('current-data state (current month, data exists)', () => {
-    const CURRENT_YEAR = new Date().getFullYear();
-    const CURRENT_MONTH = new Date().getMonth() + 1;
-
-    beforeEach(async () => {
-      // Only run this block when we're currently within the entry window (day <= 20)
-      const today = new Date().getDate();
-      if (today >= 21) return;
-
-      const ownRecord = makeGrowthRecord({
-        year: CURRENT_YEAR,
-        month: CURRENT_MONTH,
-        growth_pct: 3.5,
-      });
-      const other = makeGrowthRecord({
-        id: 'gd-2',
-        user_id: 'other-uuid',
-        year: CURRENT_YEAR,
-        month: CURRENT_MONTH,
-        growth_pct: 1.0,
-      });
-      mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockResolvedValue([ownRecord]);
-      mockGrowthData['getGrowthDataForYearMonth'] = vi.fn().mockResolvedValue([ownRecord, other]);
-      mockProfile['getRegisteredProfiles'] = vi
-        .fn()
-        .mockResolvedValue([
-          makeProfile(),
-          makeProfile({ id: 'other-uuid', first_name: 'Jane', last_name: 'Smith' }),
-          makeProfile({ id: 'third-uuid', first_name: 'Bob', last_name: 'Jones' }),
-        ]);
-      mockMarketData['getMarketIndexesForMonth'] = vi.fn().mockResolvedValue([]);
-
-      await setupComponent(CURRENT_YEAR, CURRENT_MONTH);
-    });
-
-    it('renders current-data state when within entry window and data exists', () => {
-      const today = new Date().getDate();
-      if (today >= 21) {
-        // Can't test this state when past cutoff
-        expect(component.state()).toBe('historical');
-        return;
-      }
-      expect(component.state()).toBe('current-data');
-    });
-
-    it('shows partial label in current-data state', () => {
-      const today = new Date().getDate();
-      if (today >= 21) return;
-      const el = fixture.nativeElement as HTMLElement;
-      expect(el.textContent).toContain('(partial)');
-    });
-
-    it('shows cutoff date label', () => {
-      const today = new Date().getDate();
-      if (today >= 21) return;
-      const el = fixture.nativeElement as HTMLElement;
-      expect(el.textContent).toContain('Final Data Available on the 21st');
-    });
-
-    it('shows waiting on X of Y players', () => {
-      const today = new Date().getDate();
-      if (today >= 21) return;
-      const el = fixture.nativeElement as HTMLElement;
-      // 3 registered, 2 submitted → waiting on 1
-      expect(el.textContent).toContain('Waiting on 1 of 3 players');
-    });
-  });
-
-  // ── Current-entry state ─────────────────────────────────────────────────────
-
-  describe('current-entry state (current month, no data, own card)', () => {
-    const CURRENT_YEAR = new Date().getFullYear();
-    const CURRENT_MONTH = new Date().getMonth() + 1;
-
-    beforeEach(async () => {
-      const today = new Date().getDate();
-      if (today >= 21) return;
-
-      mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockResolvedValue([]);
-      mockGrowthData['getGrowthDataForYearMonth'] = vi.fn().mockResolvedValue([]);
-      mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue([makeProfile()]);
-      mockMarketData['getMarketIndexesForMonth'] = vi.fn().mockResolvedValue([]);
-
-      await setupComponent(CURRENT_YEAR, CURRENT_MONTH);
-    });
-
-    it('renders current-entry state when no data in entry window', () => {
-      const today = new Date().getDate();
-      if (today >= 21) {
-        expect(component.state()).toBe('historical');
-        return;
-      }
-      expect(component.state()).toBe('current-entry');
-    });
-
-    it('shows entry form with input and bank dropdown', () => {
-      const today = new Date().getDate();
-      if (today >= 21) return;
-      const el = fixture.nativeElement as HTMLElement;
-      expect(el.querySelector('input')).toBeTruthy();
-      expect(el.querySelector('select')).toBeTruthy();
-    });
-
-    it('shows Save button', () => {
-      const today = new Date().getDate();
-      if (today >= 21) return;
-      const el = fixture.nativeElement as HTMLElement;
-      const btn = el.querySelector('button[type="submit"]') as HTMLButtonElement;
-      expect(btn?.textContent?.trim()).toBe('Save');
-    });
-
-    it('shows "Enter Growth / Loss" label', () => {
-      const today = new Date().getDate();
-      if (today >= 21) return;
-      const el = fixture.nativeElement as HTMLElement;
-      expect(el.textContent).toContain('Enter Growth / Loss');
-    });
-  });
-
   // ── Error state ─────────────────────────────────────────────────────────────
 
   describe('error state', () => {
     it('shows error banner when data load fails', async () => {
-      mockGrowthData['getGrowthDataForUserYear'] = vi
-        .fn()
-        .mockRejectedValue(new Error('DB timeout'));
+      mockGrowthData['getGrowthDataForYear'] = vi.fn().mockRejectedValue(new Error('DB timeout'));
 
       await setupComponent(2025, 1);
 
@@ -381,12 +259,12 @@ describe('ClassicScorecardComponent', () => {
     describe('cardTitle', () => {
       it('formats title correctly for March 2026', async () => {
         await setupComponent(2026, 3);
-        expect(component.cardTitle()).toBe('2026 - Thru March');
+        expect(component.cardTitle()).toBe('2026 YTD · March');
       });
 
       it('formats title correctly for January 2025', async () => {
         await setupComponent(2025, 1);
-        expect(component.cardTitle()).toBe('2025 - Thru January');
+        expect(component.cardTitle()).toBe('2025 YTD · January');
       });
     });
 
@@ -398,7 +276,7 @@ describe('ClassicScorecardComponent', () => {
 
       it('returns matching record for the target month', async () => {
         const record = makeGrowthRecord({ month: 6, growth_pct: 2.38 });
-        mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockResolvedValue([record]);
+        mockGrowthData['getGrowthDataForYear'] = vi.fn().mockResolvedValue([record]);
         await setupComponent(2025, 6);
         expect(component.userGrowthRecord()?.growth_pct).toBe(2.38);
       });
@@ -410,7 +288,7 @@ describe('ClassicScorecardComponent', () => {
           growth_pct: 2.0,
           month: 6,
         });
-        mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockResolvedValue([fidelity, edward]);
+        mockGrowthData['getGrowthDataForYear'] = vi.fn().mockResolvedValue([fidelity, edward]);
         await setupComponent(2025, 6);
         // Edward Jones < Fidelity Investments alphabetically
         expect(component.userGrowthRecord()?.bank_name).toBe('Edward Jones');
@@ -429,7 +307,7 @@ describe('ClassicScorecardComponent', () => {
           makeGrowthRecord({ month: 2, growth_pct: 2.0 }),
           makeGrowthRecord({ month: 3, growth_pct: 3.0 }),
         ];
-        mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockResolvedValue(records);
+        mockGrowthData['getGrowthDataForYear'] = vi.fn().mockResolvedValue(records);
         await setupComponent(2025, 3);
         expect(component.ytdDataString()).toBe('1,2,3');
       });
@@ -440,7 +318,7 @@ describe('ClassicScorecardComponent', () => {
           makeGrowthRecord({ month: 4, growth_pct: 4.0 }),
           makeGrowthRecord({ month: 5, growth_pct: 5.0 }),
         ];
-        mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockResolvedValue(records);
+        mockGrowthData['getGrowthDataForYear'] = vi.fn().mockResolvedValue(records);
         await setupComponent(2025, 3);
         expect(component.ytdDataString()).toBe('1');
       });
@@ -451,7 +329,7 @@ describe('ClassicScorecardComponent', () => {
           makeGrowthRecord({ month: 3, growth_pct: 3.0 }),
           // month 2 missing
         ];
-        mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockResolvedValue(records);
+        mockGrowthData['getGrowthDataForYear'] = vi.fn().mockResolvedValue(records);
         await setupComponent(2025, 3);
         expect(component.ytdDataString()).toBe('1,3');
       });
@@ -478,7 +356,7 @@ describe('ClassicScorecardComponent', () => {
         expect(map.get('u2')).toBe(3.0);
       });
 
-      it('filters out rows with null user_id', async () => {
+      it('keeps rows with null user_id using email-key fallback', async () => {
         const rows = [
           makeGrowthRecord({ user_id: null }),
           makeGrowthRecord({ user_id: 'u1', growth_pct: 2.0 }),
@@ -486,8 +364,9 @@ describe('ClassicScorecardComponent', () => {
         mockGrowthData['getGrowthDataForYearMonth'] = vi.fn().mockResolvedValue(rows);
         await setupComponent(2025, 6);
         const map = component.perUserMonthData();
-        expect(map.size).toBe(1);
+        expect(map.size).toBe(2);
         expect(map.has('u1')).toBe(true);
+        expect(map.has('email:user@example.com')).toBe(true);
       });
     });
 
@@ -520,7 +399,7 @@ describe('ClassicScorecardComponent', () => {
           makeGrowthRecord({ user_id: 'u2', growth_pct: 3.0 }),
           makeGrowthRecord({ user_id: 'u3', growth_pct: 1.0 }),
         ];
-        mockGrowthData['getGrowthDataForUserYear'] = vi
+        mockGrowthData['getGrowthDataForYear'] = vi
           .fn()
           .mockResolvedValue([makeGrowthRecord({ growth_pct: 5.0, month: 6 })]);
         mockGrowthData['getGrowthDataForYearMonth'] = vi.fn().mockResolvedValue(rows);
@@ -534,7 +413,7 @@ describe('ClassicScorecardComponent', () => {
           makeGrowthRecord({ user_id: MOCK_SESSION.user.id, growth_pct: 3.0 }),
           makeGrowthRecord({ user_id: 'u3', growth_pct: 1.0 }),
         ];
-        mockGrowthData['getGrowthDataForUserYear'] = vi
+        mockGrowthData['getGrowthDataForYear'] = vi
           .fn()
           .mockResolvedValue([makeGrowthRecord({ growth_pct: 3.0, month: 6 })]);
         mockGrowthData['getGrowthDataForYearMonth'] = vi.fn().mockResolvedValue(rows);
@@ -591,7 +470,7 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('formats positive value with + prefix and two decimals', async () => {
-        mockGrowthData['getGrowthDataForUserYear'] = vi
+        mockGrowthData['getGrowthDataForYear'] = vi
           .fn()
           .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 3.75 })]);
         await setupComponent(2025, 6);
@@ -599,7 +478,7 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('formats negative value with − prefix', async () => {
-        mockGrowthData['getGrowthDataForUserYear'] = vi
+        mockGrowthData['getGrowthDataForYear'] = vi
           .fn()
           .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: -1.5 })]);
         await setupComponent(2025, 6);
@@ -627,6 +506,7 @@ describe('ClassicScorecardComponent', () => {
 
     describe('cardAriaLabel', () => {
       it('returns Scorecard when profile not found', async () => {
+        mockProfile['getRegisteredProfiles'] = vi.fn().mockResolvedValue([]);
         await setupComponent(2025, 6);
         expect(component.cardAriaLabel()).toBe('Scorecard');
       });
@@ -727,7 +607,7 @@ describe('ClassicScorecardComponent', () => {
   describe('_loadInProgress guard', () => {
     it('prevents duplicate concurrent loads', async () => {
       let resolveLoad!: (v: GrowthData[]) => void;
-      mockGrowthData['getGrowthDataForUserYear'] = vi.fn().mockReturnValue(
+      mockGrowthData['getGrowthDataForYear'] = vi.fn().mockReturnValue(
         new Promise<GrowthData[]>((r) => {
           resolveLoad = r;
         }),
@@ -744,151 +624,18 @@ describe('ClassicScorecardComponent', () => {
       // Call loadData a second time while first is still in flight
       component.loadData();
 
-      // getGrowthDataForUserYear should still only have been called once
-      expect(mockGrowthData['getGrowthDataForUserYear']).toHaveBeenCalledTimes(1);
+      // getGrowthDataForYear should still only have been called once
+      expect(mockGrowthData['getGrowthDataForYear']).toHaveBeenCalledTimes(1);
 
       resolveLoad([]);
     });
   });
 
-  // ── Month navigation ────────────────────────────────────────────────────────
+  // ── Parent-driven period + refresh-trigger effect ─────────────────────────
 
-  describe('month navigation', () => {
-    describe('displayYear / displayMonth', () => {
-      it('equals the input year/month at offset 0', async () => {
-        await setupComponent(2025, 6);
-        expect(component.displayYear()).toBe(2025);
-        expect(component.displayMonth()).toBe(6);
-      });
-
-      it('goes back one month correctly within a year', async () => {
-        await setupComponent(2025, 6);
-        component.goToPrevMonth();
-        expect(component.displayYear()).toBe(2025);
-        expect(component.displayMonth()).toBe(5);
-      });
-
-      it('wraps year boundary correctly when going back from January', async () => {
-        await setupComponent(2025, 1);
-        component.goToPrevMonth();
-        expect(component.displayYear()).toBe(2024);
-        expect(component.displayMonth()).toBe(12);
-      });
-
-      it('goes forward one month correctly within a year', async () => {
-        await setupComponent(2025, 3);
-        // Make sure canGoNext is true by starting on a clearly past month
-        component.offsetMonths.set(0);
-        component.goToNextMonth();
-        expect(component.displayMonth()).toBe(4);
-      });
-
-      it('wraps year boundary correctly when going forward from December', async () => {
-        await setupComponent(2024, 12);
-        component.goToNextMonth();
-        expect(component.displayYear()).toBe(2025);
-        expect(component.displayMonth()).toBe(1);
-      });
-    });
-
-    describe('canGoNext', () => {
-      it('returns false when already at the previous calendar month', async () => {
-        const now = new Date();
-        const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth();
-        const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-        await setupComponent(prevYear, prevMonth);
-        expect(component.canGoNext()).toBe(false);
-      });
-
-      it('returns true for a clearly historical month', async () => {
-        await setupComponent(2020, 6);
-        expect(component.canGoNext()).toBe(true);
-      });
-
-      it('goToNextMonth does nothing when canGoNext is false', async () => {
-        const now = new Date();
-        const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth();
-        const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-        await setupComponent(prevYear, prevMonth);
-        component.goToNextMonth();
-        expect(component.displayMonth()).toBe(prevMonth);
-        expect(component.displayYear()).toBe(prevYear);
-      });
-    });
-
-    describe('navigationLabel', () => {
-      it('shows the initial month label', async () => {
-        await setupComponent(2025, 6);
-        expect(component.navigationLabel()).toBe('June 2025');
-      });
-
-      it('updates after navigating back', async () => {
-        await setupComponent(2025, 6);
-        component.goToPrevMonth();
-        expect(component.navigationLabel()).toBe('May 2025');
-      });
-    });
-
-    describe('no-data state', () => {
-      it('shows no-data state when allPlayersMonth is empty after load', async () => {
-        // Default mock returns [] for getGrowthDataForYearMonth
-        await setupComponent(2020, 1);
-        expect(component.state()).toBe('no-data');
-      });
-
-      it('renders no-data message in DOM', async () => {
-        await setupComponent(2020, 1);
-        fixture.detectChanges();
-        const el = fixture.nativeElement as HTMLElement;
-        expect(el.textContent).toContain('No data found for this month.');
-      });
-
-      it('does not show no-data when allPlayersMonth has entries', async () => {
-        mockGrowthData['getGrowthDataForYearMonth'] = vi
-          .fn()
-          .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 2.38 })]);
-        await setupComponent(2025, 6);
-        expect(component.state()).toBe('historical');
-      });
-    });
-
-    describe('navigation buttons in DOM', () => {
-      it('renders prev and next buttons', async () => {
-        await setupComponent(2025, 6);
-        fixture.detectChanges();
-        const el = fixture.nativeElement as HTMLElement;
-        const buttons = el.querySelectorAll('button[aria-label]');
-        const ariaLabels = Array.from(buttons).map((b) => b.getAttribute('aria-label'));
-        expect(ariaLabels).toContain('Previous month');
-        expect(ariaLabels).toContain('Next month');
-      });
-
-      it('next button is hidden when at the most recent allowed month', async () => {
-        const now = new Date();
-        const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth();
-        const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-        await setupComponent(prevYear, prevMonth);
-        fixture.detectChanges();
-        const el = fixture.nativeElement as HTMLElement;
-        const nextBtn = el.querySelector('button[aria-label="Next month"]');
-        expect(nextBtn).toBeNull();
-      });
-
-      it('next button is visible for a historical month', async () => {
-        await setupComponent(2020, 6);
-        fixture.detectChanges();
-        const el = fixture.nativeElement as HTMLElement;
-        const nextBtn = el.querySelector('button[aria-label="Next month"]');
-        expect(nextBtn).not.toBeNull();
-      });
-    });
-  });
-
-  // ── Guarded refresh-trigger effect ──────────────────────────────────────────
-
-  describe('guarded refresh-trigger effect', () => {
+  describe('parent-driven period + refresh-trigger effect', () => {
     beforeEach(async () => {
-      mockGrowthData['getGrowthDataForUserYear'] = vi
+      mockGrowthData['getGrowthDataForYear'] = vi
         .fn()
         .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 2.38 })]);
       mockMarketData['getMarketIndexesForMonth'] = vi
@@ -900,18 +647,21 @@ describe('ClassicScorecardComponent', () => {
         .mockResolvedValue([makeGrowthRecord({ month: 6, growth_pct: 2.38 })]);
     });
 
-    it('does not reset offset on first component load', async () => {
+    it('uses the exact year/month provided by the parent', async () => {
       await setupComponent(2025, 6);
-      // Manually navigate to a different month
-      component.goToPrevMonth();
-      expect(component.offsetMonths()).toBe(-1);
+      expect(component.displayYear()).toBe(2025);
+      expect(component.displayMonth()).toBe(6);
+
+      fixture.componentRef.setInput('year', 2024);
+      fixture.componentRef.setInput('month', 12);
       fixture.detectChanges();
       await flushPromises();
-      // Still at -1, not reset
-      expect(component.offsetMonths()).toBe(-1);
+
+      expect(component.displayYear()).toBe(2024);
+      expect(component.displayMonth()).toBe(12);
     });
 
-    it('resets offset to 0 when refreshTrigger value changes (e.g. after save)', async () => {
+    it('reloads data when refreshTrigger changes', async () => {
       fixture = TestBed.createComponent(ClassicScorecardComponent);
       component = fixture.componentInstance;
       fixture.componentRef.setInput('year', 2025);
@@ -920,72 +670,13 @@ describe('ClassicScorecardComponent', () => {
       fixture.componentRef.setInput('refreshTrigger', 0);
       fixture.detectChanges();
       await flushPromises();
+      const initialCalls = mockGrowthData['getGrowthDataForYear'].mock.calls.length;
 
-      // Manually navigate back one month
-      component.goToPrevMonth();
-      expect(component.offsetMonths()).toBe(-1);
-      fixture.detectChanges();
-
-      // Now simulate parent incrementing refreshTrigger (e.g. monthly entry saved)
+      // Simulate parent incrementing refreshTrigger after a save.
       fixture.componentRef.setInput('refreshTrigger', 1);
       fixture.detectChanges();
       await flushPromises();
-      fixture.detectChanges();
-
-      // Offset should reset to 0
-      expect(component.offsetMonths()).toBe(0);
-    });
-
-    it('does NOT reset offset when refreshTrigger stays the same', async () => {
-      fixture = TestBed.createComponent(ClassicScorecardComponent);
-      component = fixture.componentInstance;
-      fixture.componentRef.setInput('year', 2025);
-      fixture.componentRef.setInput('month', 6);
-      fixture.componentRef.setInput('uuid', MOCK_SESSION.user.id);
-      fixture.componentRef.setInput('refreshTrigger', 1);
-      fixture.detectChanges();
-      await flushPromises();
-
-      // Navigate back
-      component.goToPrevMonth();
-      expect(component.offsetMonths()).toBe(-1);
-
-      // Update some other input (not refreshTrigger) and detectChanges
-      fixture.componentRef.setInput('uuid', MOCK_SESSION.user.id);
-      fixture.detectChanges();
-      await flushPromises();
-
-      // Offset should still be -1 (not reset)
-      expect(component.offsetMonths()).toBe(-1);
-    });
-
-    it('resets offset again when refreshTrigger changes a second time', async () => {
-      fixture = TestBed.createComponent(ClassicScorecardComponent);
-      component = fixture.componentInstance;
-      fixture.componentRef.setInput('year', 2025);
-      fixture.componentRef.setInput('month', 6);
-      fixture.componentRef.setInput('uuid', MOCK_SESSION.user.id);
-      fixture.componentRef.setInput('refreshTrigger', 0);
-      fixture.detectChanges();
-      await flushPromises();
-
-      // First refresh trigger change
-      fixture.componentRef.setInput('refreshTrigger', 1);
-      fixture.detectChanges();
-      await flushPromises();
-      expect(component.offsetMonths()).toBe(0);
-
-      // Navigate back again
-      component.goToPrevMonth();
-      expect(component.offsetMonths()).toBe(-1);
-
-      // Second refresh trigger change
-      fixture.componentRef.setInput('refreshTrigger', 2);
-      fixture.detectChanges();
-      await flushPromises();
-
-      // Offset should reset to 0 again
-      expect(component.offsetMonths()).toBe(0);
+      expect(mockGrowthData['getGrowthDataForYear'].mock.calls.length).toBe(initialCalls + 1);
     });
   });
 });

@@ -1,4 +1,3 @@
-<!-- ── Dashboard ────────────────────────────────────────────────── -->
 <div class="gt-dash-container">
   @if (loading()) {
     <p class="gt-loading">Loading…</p>
@@ -54,41 +53,15 @@
 
     <app-month-year-selector
       [selectedYear]="selectedYear()"
-      [selectedMonth]="selectedMonth()"
-      [showMonth]="true"
+      [showMonth]="false"
       (yearChange)="onSelectedYearChange($event)"
-      (monthChange)="onSelectedMonthChange($event)"
     />
 
-    @if (profile()?.id) {
-      <section class="gt-monthly-layout" aria-label="Monthly dashboard layout">
-        <div class="gt-monthly-left">
-          @if (showGrowthEntry()) {
-            <app-monthly-growth-entry
-              [year]="selectedYear()"
-              [month]="selectedMonth()"
-              (saved)="onGrowthEntrySaved()"
-            />
-          }
-          <app-classic-scorecard
-            [year]="selectedYear()"
-            [month]="selectedMonth()"
-            [uuid]="profile()!.id"
-            [refreshTrigger]="scorecardRefreshKey()"
-          />
-        </div>
-
-        <div class="gt-monthly-right">
-          <app-monthly-rank-list
-            [selectedYear]="selectedYear()"
-            [selectedMonth]="selectedMonth()"
-            [rows]="monthlyRankRows()"
-            [playerAveragePct]="monthlyPlayerAveragePct()"
-            [dowGrowthPct]="monthlyDowGrowthPct()"
-            [sp500GrowthPct]="monthlySp500GrowthPct()"
-          />
-        </div>
-      </section>
-    }
+    <app-growth-grid
+      [rows]="rows()"
+      [selectedYear]="selectedYear()"
+      [dowMonths]="dowMonths()"
+      [sp500Months]="sp500Months()"
+    />
   }
 </div>

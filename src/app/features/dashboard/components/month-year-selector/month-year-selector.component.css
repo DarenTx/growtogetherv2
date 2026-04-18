@@ -1,0 +1,91 @@
+:host {
+  display: block;
+  margin-bottom: 1.1rem;
+}
+
+.gt-period-selector {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0 0.15rem 0.65rem;
+  border-bottom: 2px solid var(--color-border, rgb(226 232 240));
+}
+
+.gt-period-label {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  font-size: clamp(1.1rem, 4.8vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--color-text-base, rgb(15 23 42));
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.75);
+}
+
+.gt-period-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.55rem;
+  height: 2.35rem;
+  border: 1px solid var(--color-border, rgb(203 213 225));
+  border-radius: 0.8rem;
+  background: linear-gradient(180deg, rgb(255 255 255), rgb(241 245 249));
+  color: var(--color-primary, rgb(29 78 58));
+  font-size: 1.22rem;
+  font-weight: 700;
+  padding: 0;
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.1),
+    0 0 0 2px rgb(236 253 245 / 0.9);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.gt-period-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--color-primary, rgb(29 78 58));
+  background: linear-gradient(180deg, rgb(255 255 255), rgb(220 252 231));
+  color: var(--color-primary-hover, rgb(22 101 52));
+  box-shadow:
+    0 3px 10px rgb(15 23 42 / 0.12),
+    0 0 0 2px rgb(220 252 231 / 1);
+}
+
+.gt-period-btn:active:not(:disabled) {
+  transform: translateY(0);
+  background: linear-gradient(180deg, rgb(236 253 245), rgb(209 250 229));
+}
+
+.gt-period-btn:disabled {
+  opacity: 0.45;
+  background: var(--color-surface-raised, rgb(255 255 255));
+  color: var(--color-text-muted, rgb(100 116 139));
+  border-color: var(--color-border, rgb(226 232 240));
+  box-shadow: 0 0 0 1px rgb(241 245 249 / 1);
+  cursor: not-allowed;
+}
+
+.gt-period-btn:focus-visible {
+  outline: 2px solid var(--color-gold-500, rgb(217 119 6));
+  outline-offset: 2px;
+}
+
+.gt-period-btn-arrow {
+  display: inline-block;
+  transform: translateY(-1px) scale(1.07);
+  font-size: 1.4rem;
+  line-height: 1;
+  font-weight: 600;
+}

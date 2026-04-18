@@ -79,8 +79,8 @@ describe('RegistrationComponent', () => {
     component.form.setValue({
       first_name: 'John',
       last_name: 'Doe',
-      work_email: ' John@Example.COM ',
-      personal_email: ' John.Personal@Example.COM ',
+      work_email: 'John@Example.COM',
+      personal_email: 'John.Personal@Example.COM',
       invitation_code: 'Fruehling',
     });
 

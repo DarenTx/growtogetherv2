@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { SelectYearComponent } from '../select-year/select-year.component';
+import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { TrendLabelComponent } from '../../../../shared/components/trend-label/trend-label.component';
-import { DashboardRow } from '../../dashboard.component';
+import { DashboardRow } from '../../dashboard-row.interface';
 
 export const MONTHS = [
   'Jan',
@@ -24,7 +23,7 @@ type SortDirection = 'asc' | 'desc';
 @Component({
   selector: 'app-growth-grid',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SelectYearComponent, TrendLabelComponent],
+  imports: [TrendLabelComponent],
   templateUrl: './growth-grid.component.html',
   styleUrl: './growth-grid.component.css',
 })
@@ -33,8 +32,6 @@ export class GrowthGridComponent {
   readonly selectedYear = input.required<number>();
   readonly dowMonths = input<(number | null)[]>([]);
   readonly sp500Months = input<(number | null)[]>([]);
-
-  readonly yearChange = output<number>();
 
   readonly months = MONTHS;
 
@@ -128,9 +125,5 @@ export class GrowthGridComponent {
   formatPct(value: number | null): string {
     if (value === null) return '';
     return `${value.toFixed(2)}%`;
-  }
-
-  onYearChange(year: number): void {
-    this.yearChange.emit(year);
   }
 }

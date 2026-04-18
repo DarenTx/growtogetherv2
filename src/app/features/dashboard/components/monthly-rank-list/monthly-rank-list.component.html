@@ -1,0 +1,65 @@
+<section class="gt-card gt-rank-list" aria-label="Monthly player rankings">
+  <header class="gt-rank-header">
+    <h2
+      class="text-center text-xs font-semibold uppercase tracking-widest text-text-secondary mb-1"
+    >
+      {{ heading() }}
+    </h2>
+  </header>
+
+  @if (rows().length === 0) {
+    <p class="gt-rank-empty">No player submissions were found for this month.</p>
+  } @else {
+    <div class="gt-rank-columns" aria-hidden="true">
+      <span>Rank</span>
+      <span>Player Name</span>
+      <span class="gt-rank-col-mtd">Trend</span>
+      <span class="gt-rank-col-ytd">YTD</span>
+    </div>
+
+    <ul class="gt-rank-items" role="list">
+      @for (row of rows(); track row.playerName) {
+        <li class="gt-rank-item" [class.is-top-three]="row.rank <= 3">
+          <span class="gt-rank-rank">{{ row.rank }}</span>
+          <span class="gt-rank-player">{{ row.playerName }}</span>
+          <span class="gt-rank-trend gt-rank-col-mtd">
+            <app-trend-label [data]="row.trendData" [showText]="false" [showIcon]="false" />
+          </span>
+          <span
+            class="gt-rank-growth gt-rank-col-ytd"
+            [class.is-positive]="row.growthPct > 0"
+            [class.is-negative]="row.growthPct < 0"
+          >
+            {{ formatPct(row.growthPct) }}
+          </span>
+        </li>
+      }
+    </ul>
+
+    <div class="gt-rank-summary" aria-label="Monthly comparison summary">
+      <span class="gt-rank-summary-label">Player Avg</span>
+      <span
+        class="gt-rank-summary-value"
+        [class.is-positive]="playerAveragePct() !== null && playerAveragePct()! > 0"
+        [class.is-negative]="playerAveragePct() !== null && playerAveragePct()! < 0"
+        >{{ playerAveragePct() === null ? '—' : formatPct(playerAveragePct()!) }}</span
+      >
+
+      <span class="gt-rank-summary-label">Dow</span>
+      <span
+        class="gt-rank-summary-value"
+        [class.is-positive]="dowGrowthPct() !== null && dowGrowthPct()! > 0"
+        [class.is-negative]="dowGrowthPct() !== null && dowGrowthPct()! < 0"
+        >{{ dowGrowthPct() === null ? '—' : formatPct(dowGrowthPct()!) }}</span
+      >
+
+      <span class="gt-rank-summary-label">S&amp;P 500</span>
+      <span
+        class="gt-rank-summary-value"
+        [class.is-positive]="sp500GrowthPct() !== null && sp500GrowthPct()! > 0"
+        [class.is-negative]="sp500GrowthPct() !== null && sp500GrowthPct()! < 0"
+        >{{ sp500GrowthPct() === null ? '—' : formatPct(sp500GrowthPct()!) }}</span
+      >
+    </div>
+  }
+</section>

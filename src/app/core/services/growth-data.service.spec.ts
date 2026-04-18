@@ -11,6 +11,8 @@ const mockChain = {
   order: vi.fn(),
   upsert: vi.fn(),
   not: vi.fn(),
+  or: vi.fn(),
+  single: vi.fn(),
 };
 Object.keys(mockChain).forEach((k) =>
   mockChain[k as keyof typeof mockChain].mockReturnValue(mockChain),

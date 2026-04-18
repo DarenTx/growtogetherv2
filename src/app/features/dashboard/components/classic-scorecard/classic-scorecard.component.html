@@ -4,51 +4,6 @@
     My Performance
   </p>
 
-  <!-- Month navigation -->
-  <div class="flex items-center justify-between mb-3">
-    <button
-      type="button"
-      class="p-1.5 rounded text-text-secondary hover:text-text-base hover:bg-surface transition-colors"
-      (click)="goToPrevMonth()"
-      aria-label="Previous month"
-    >
-      <svg
-        class="w-5 h-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        aria-hidden="true"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-      </svg>
-    </button>
-    <span class="text-base font-semibold text-text-base" aria-live="polite">{{
-      navigationLabel()
-    }}</span>
-    @if (canGoNext()) {
-      <button
-        type="button"
-        class="p-1.5 rounded text-text-secondary hover:text-text-base hover:bg-surface transition-colors"
-        (click)="goToNextMonth()"
-        aria-label="Next month"
-      >
-        <svg
-          class="w-5 h-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          aria-hidden="true"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    } @else {
-      <span class="w-8"></span>
-    }
-  </div>
-
   @switch (state()) {
     @case ('loading') {
       <p class="text-center text-text-muted">Loading…</p>

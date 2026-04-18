@@ -2,33 +2,9 @@
   display: block;
 }
 
-/* Dashboard uses full-width layout (table needs horizontal space) */
 .gt-dash-container {
   padding: 1.25rem 1rem 3rem;
   animation: fade-in 0.2s ease-out;
-}
-
-.gt-monthly-layout {
-  display: grid;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  align-items: start;
-}
-
-.gt-monthly-left {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.gt-monthly-left > * {
-  width: 100%;
-  max-width: 28rem;
-}
-
-.gt-monthly-right {
-  width: 100%;
-  max-width: 56rem;
 }
 
 .gt-dashboard-links {
@@ -120,11 +96,4 @@
 .gt-install-btn:focus-visible {
   outline: 2px solid rgb(56 189 248);
   outline-offset: 2px;
-}
-
-@media (min-width: 1100px) {
-  .gt-monthly-layout {
-    grid-template-columns: minmax(0, 28rem) minmax(0, 56rem);
-    column-gap: 2.5rem;
-  }
 }

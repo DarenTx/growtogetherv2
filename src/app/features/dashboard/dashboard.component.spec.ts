@@ -3,12 +3,14 @@ import { Router, provideRouter } from '@angular/router';
 import { AdminService } from '../../core/services/admin.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrowthDataService } from '../../core/services/growth-data.service';
+import { MarketDataService } from '../../core/services/market-data.service';
 import { ProfileService } from '../../core/services/profile.service';
 import {
   MOCK_PROFILE_COMPLETE,
   createMockAdminService,
   createMockAuthService,
   createMockGrowthDataService,
+  createMockMarketDataService,
   createMockProfileService,
 } from '../../core/testing/mock-supabase.service';
 import { DashboardComponent } from './dashboard.component';
@@ -27,9 +29,11 @@ describe('DashboardComponent', () => {
       ...createMockProfileService(),
       ...createMockAdminService(),
       ...createMockGrowthDataService(),
+      ...createMockMarketDataService(),
     };
     mockService['getProfile'] = vi.fn().mockResolvedValue(MOCK_PROFILE_COMPLETE);
     mockService['getAvailableYears'] = vi.fn().mockResolvedValue([2026, 2025, 2024]);
+    mockService['getMarketIndexesForMonth'] = vi.fn().mockResolvedValue([]);
 
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
@@ -39,6 +43,7 @@ describe('DashboardComponent', () => {
         { provide: ProfileService, useValue: mockService },
         { provide: AdminService, useValue: mockService },
         { provide: GrowthDataService, useValue: mockService },
+        { provide: MarketDataService, useValue: mockService },
       ],
     }).compileComponents();
 
@@ -66,13 +71,12 @@ describe('DashboardComponent', () => {
   });
 
   it('shows loading state before data loads', async () => {
-    // Reset and start fresh – block all three parallel calls
+    // Reset and start fresh – block both parallel calls
     let resolveAll!: () => void;
     const pending = new Promise<void>((res) => {
       resolveAll = res;
     });
     mockService['getProfile'] = vi.fn().mockReturnValue(pending.then(() => MOCK_PROFILE_COMPLETE));
-    mockService['getAllProfiles'] = vi.fn().mockReturnValue(pending.then(() => []));
     mockService['getGrowthDataForYear'] = vi.fn().mockReturnValue(pending.then(() => []));
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
@@ -82,14 +86,14 @@ describe('DashboardComponent', () => {
     resolveAll();
   });
 
-  it('displays growth grid title with current year', () => {
-    const title = fixture.nativeElement.querySelector('.gt-grid-title') as HTMLElement;
-    expect(title.textContent).toContain(String(new Date().getFullYear()));
+  it('shows the month/year selector', () => {
+    const selector = fixture.nativeElement.querySelector('app-month-year-selector') as HTMLElement;
+    expect(selector).toBeTruthy();
   });
 
   it('reloads growth data when year changes', async () => {
     mockService['getGrowthDataForYear'] = vi.fn().mockResolvedValue([]);
-    await component.onYearChange(2024);
+    await component.onSelectedYearChange(2024);
     expect(component.selectedYear()).toBe(2024);
     expect(mockService['getGrowthDataForYear']).toHaveBeenCalledWith(2024);
   });
@@ -99,5 +103,46 @@ describe('DashboardComponent', () => {
     await component.signOut();
     expect(mockService['signOut']).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('does not show monthly growth entry for the current month when data is missing', () => {
+    component.profile.set(MOCK_PROFILE_COMPLETE);
+    component.selectedYear.set(new Date().getFullYear());
+    component.selectedMonth.set(new Date().getMonth() + 1);
+    component['growthData'].set([]);
+
+    expect(component.showGrowthEntry()).toBe(false);
+  });
+
+  it('does not show monthly growth entry for a future month when data is missing', () => {
+    component.profile.set(MOCK_PROFILE_COMPLETE);
+
+    const now = new Date();
+    if (now.getMonth() + 1 === 12) {
+      component.selectedYear.set(now.getFullYear() + 1);
+      component.selectedMonth.set(1);
+    } else {
+      component.selectedYear.set(now.getFullYear());
+      component.selectedMonth.set(now.getMonth() + 2);
+    }
+
+    component['growthData'].set([]);
+    expect(component.showGrowthEntry()).toBe(false);
+  });
+
+  it('shows monthly growth entry for a past month when data is missing', () => {
+    component.profile.set(MOCK_PROFILE_COMPLETE);
+
+    const now = new Date();
+    if (now.getMonth() + 1 === 1) {
+      component.selectedYear.set(now.getFullYear() - 1);
+      component.selectedMonth.set(12);
+    } else {
+      component.selectedYear.set(now.getFullYear());
+      component.selectedMonth.set(now.getMonth());
+    }
+
+    component['growthData'].set([]);
+    expect(component.showGrowthEntry()).toBe(true);
   });
 });

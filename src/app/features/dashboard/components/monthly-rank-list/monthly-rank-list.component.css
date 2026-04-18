@@ -1,0 +1,137 @@
+:host {
+  display: block;
+}
+
+.gt-rank-list {
+  margin-top: 1rem;
+}
+
+.gt-rank-header {
+  margin-bottom: 0.5rem;
+}
+
+.gt-rank-empty {
+  margin: 0.25rem 0 0;
+}
+
+.gt-rank-columns {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  padding: 0 0.1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.gt-rank-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gt-rank-item {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-muted, rgb(148 163 184 / 0.35));
+  padding: 0.45rem 0.1rem;
+  font-weight: 400;
+}
+
+.gt-rank-item.is-top-three {
+  font-weight: 600;
+}
+
+.gt-rank-rank {
+  font-weight: inherit;
+}
+
+.gt-rank-player {
+  font-weight: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gt-rank-trend {
+  display: block;
+  min-height: 1.2rem;
+  min-width: 0;
+}
+
+.gt-rank-col-ytd {
+  text-align: right;
+}
+
+.gt-rank-trend app-trend-label {
+  display: block;
+  width: 100%;
+}
+
+.gt-rank-growth {
+  text-align: right;
+  font-weight: inherit;
+}
+
+.gt-rank-growth.is-positive,
+.gt-rank-summary-value.is-positive {
+  color: var(--color-success);
+}
+
+.gt-rank-growth.is-negative,
+.gt-rank-summary-value.is-negative {
+  color: var(--color-error);
+}
+
+.gt-rank-summary {
+  margin-top: 0.7rem;
+  padding-top: 0.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 0.75rem;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.gt-rank-summary-label {
+  color: var(--color-text-muted, rgb(148 163 184));
+}
+
+.gt-rank-summary-value {
+  text-align: right;
+  font-weight: 400;
+  color: var(--color-text-muted, rgb(148 163 184));
+}
+
+@media (max-width: 767px) {
+  .gt-rank-columns {
+    display: none;
+  }
+
+  .gt-rank-item {
+    grid-template-columns: 3rem minmax(0, 1fr) 4rem auto;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .gt-rank-trend {
+    width: 4rem;
+    max-width: 4rem;
+    overflow: hidden;
+    justify-self: end;
+  }
+
+  .gt-rank-trend app-trend-label {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .gt-rank-growth {
+    text-align: right;
+  }
+}

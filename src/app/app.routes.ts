@@ -42,6 +42,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/tos/tos.component').then((m) => m.TosComponent),
   },
   {
+    path: 'dashboard/yearly',
+    loadComponent: () =>
+      import('./features/dashboard/yearly-dashboard.component').then(
+        (m) => m.YearlyDashboardComponent,
+      ),
+    canActivate: [registrationGuard],
+  },
+  {
     path: 'dashboard',
     loadComponent: () =>
       import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),

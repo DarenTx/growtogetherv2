@@ -1,0 +1,23 @@
+<div class="gt-period-selector" role="group" aria-label="Dashboard period selector">
+  <button
+    type="button"
+    class="gt-period-btn"
+    [disabled]="!canGoPrevious()"
+    (click)="goPrevious()"
+    aria-label="Previous period"
+  >
+    <span class="gt-period-btn-arrow" aria-hidden="true">&#8249;</span>
+  </button>
+
+  <p class="gt-period-label" aria-live="polite">{{ displayLabel() }}</p>
+
+  <button
+    type="button"
+    class="gt-period-btn"
+    [disabled]="!canGoNext()"
+    (click)="goNext()"
+    aria-label="Next period"
+  >
+    <span class="gt-period-btn-arrow" aria-hidden="true">&#8250;</span>
+  </button>
+</div>

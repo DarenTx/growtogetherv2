@@ -1,9 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  createMockGrowthDataService,
-} from '../../../../core/testing/mock-supabase.service';
-import { GrowthDataService } from '../../../../core/services/growth-data.service';
-import { DashboardRow } from '../../dashboard.component';
+import { DashboardRow } from '../../dashboard-row.interface';
 import { GrowthGridComponent } from './growth-grid.component';
 
 const MOCK_ROWS: DashboardRow[] = [
@@ -24,18 +20,10 @@ const MOCK_ROWS: DashboardRow[] = [
 describe('GrowthGridComponent', () => {
   let fixture: ComponentFixture<GrowthGridComponent>;
   let component: GrowthGridComponent;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockService: Record<string, any>;
 
   beforeEach(async () => {
-    mockService = {
-      ...createMockGrowthDataService(),
-    };
-    mockService['getAvailableYears'] = vi.fn().mockResolvedValue([2026, 2025, 2024]);
-
     await TestBed.configureTestingModule({
       imports: [GrowthGridComponent],
-      providers: [{ provide: GrowthDataService, useValue: mockService }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GrowthGridComponent);
@@ -62,14 +50,18 @@ describe('GrowthGridComponent', () => {
   });
 
   it('renders month headers', () => {
-    const headers = fixture.nativeElement.querySelectorAll('th.col-month') as NodeListOf<HTMLElement>;
+    const headers = fixture.nativeElement.querySelectorAll(
+      'th.col-month',
+    ) as NodeListOf<HTMLElement>;
     expect(headers.length).toBe(12);
     expect(headers[0].textContent).toContain('Jan');
     expect(headers[11].textContent).toContain('Dec');
   });
 
   it('sorts rows by name ascending by default', () => {
-    const cells = fixture.nativeElement.querySelectorAll('tbody td.col-name') as NodeListOf<HTMLElement>;
+    const cells = fixture.nativeElement.querySelectorAll(
+      'tbody td.col-name',
+    ) as NodeListOf<HTMLElement>;
     // Adams should come before Smith
     expect(cells[0].textContent).toContain('Adams');
     expect(cells[1].textContent).toContain('Smith');
@@ -79,7 +71,9 @@ describe('GrowthGridComponent', () => {
     component.sortBy('name');
     fixture.detectChanges();
     expect(component.sortDirection()).toBe('desc');
-    const cells = fixture.nativeElement.querySelectorAll('tbody td.col-name') as NodeListOf<HTMLElement>;
+    const cells = fixture.nativeElement.querySelectorAll(
+      'tbody td.col-name',
+    ) as NodeListOf<HTMLElement>;
     expect(cells[0].textContent).toContain('Smith');
     expect(cells[1].textContent).toContain('Adams');
   });
@@ -88,20 +82,15 @@ describe('GrowthGridComponent', () => {
     // Sort by month-0 (Jan): Adams has null, Smith has 1.5 → nulls last → Smith first
     component.sortBy('month-0');
     fixture.detectChanges();
-    const cells = fixture.nativeElement.querySelectorAll('tbody td.col-name') as NodeListOf<HTMLElement>;
+    const cells = fixture.nativeElement.querySelectorAll(
+      'tbody td.col-name',
+    ) as NodeListOf<HTMLElement>;
     expect(cells[0].textContent).toContain('Smith');
     expect(cells[1].textContent).toContain('Adams');
   });
 
-  it('emits yearChange when year is changed', () => {
-    const emitted: number[] = [];
-    component.yearChange.subscribe((y) => emitted.push(y));
-    component.onYearChange(2025);
-    expect(emitted).toEqual([2025]);
-  });
-
-  it('formats positive percentages with a plus sign', () => {
-    expect(component.formatPct(1.5)).toBe('+1.50%');
+  it('formats positive percentages without a plus sign', () => {
+    expect(component.formatPct(1.5)).toBe('1.50%');
   });
 
   it('formats negative percentages without a plus sign', () => {

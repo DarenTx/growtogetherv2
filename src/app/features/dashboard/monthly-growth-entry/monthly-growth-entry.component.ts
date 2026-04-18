@@ -3,7 +3,10 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  computed,
+  effect,
   inject,
+  input,
   output,
   signal,
 } from '@angular/core';
@@ -31,10 +34,15 @@ export class MonthlyGrowthEntryComponent implements OnInit {
   // Private state
   private session: Session | null = null;
 
-  // Readonly computed values (set once on init)
-  prevMonth!: number;
-  prevYear!: number;
-  displayLabel!: string;
+  readonly year = input.required<number>();
+  readonly month = input.required<number>();
+
+  readonly displayLabel = computed(() => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      year: 'numeric',
+    }).format(new Date(this.year(), this.month() - 1, 1));
+  });
 
   // Writable signals
   readonly isLoading = signal(false);
@@ -53,17 +61,15 @@ export class MonthlyGrowthEntryComponent implements OnInit {
   readonly bankControl = new FormControl<string>('', { nonNullable: true });
   readonly growthPctControl = new FormControl<string>('', { nonNullable: true });
 
-  async ngOnInit(): Promise<void> {
-    // Compute previous month / year
-    const now = new Date();
-    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    this.prevMonth = prevDate.getMonth() + 1;
-    this.prevYear = prevDate.getFullYear();
-    this.displayLabel = new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      year: 'numeric',
-    }).format(prevDate);
+  constructor() {
+    effect(() => {
+      this.year();
+      this.month();
+      void this.loadExistingRecord();
+    });
+  }
 
+  async ngOnInit(): Promise<void> {
     // Load session
     this.session = await this.auth.getSession();
     if (!this.session) {
@@ -99,14 +105,23 @@ export class MonthlyGrowthEntryComponent implements OnInit {
   }
 
   async loadExistingRecord(): Promise<void> {
+    if (!this.session) {
+      return;
+    }
+
+    const bankName = this.bankControl.value;
+    if (!bankName) {
+      return;
+    }
+
     this.growthPctControl.setValue('');
     this.isLoading.set(true);
     this.loadFailed.set(false);
     try {
       const record = await this.growthDataService.getOwnGrowthDataForMonth(
-        this.prevYear,
-        this.prevMonth,
-        this.bankControl.value,
+        this.year(),
+        this.month(),
+        bankName,
       );
       if (record) {
         this.growthPctControl.setValue(record.growth_pct.toFixed(2));
@@ -144,8 +159,8 @@ export class MonthlyGrowthEntryComponent implements OnInit {
     try {
       if (rawValue === '') {
         await this.growthDataService.deleteOwnGrowthDataForMonth(
-          this.prevYear,
-          this.prevMonth,
+          this.year(),
+          this.month(),
           this.bankControl.value,
         );
         this.successMessage.set('Growth cleared.');
@@ -154,8 +169,8 @@ export class MonthlyGrowthEntryComponent implements OnInit {
         await this.growthDataService.saveGrowthData({
           email_key: userEmail.toLowerCase(),
           user_id: this.session!.user.id,
-          year: this.prevYear,
-          month: this.prevMonth,
+          year: this.year(),
+          month: this.month(),
           bank_name: this.bankControl.value,
           growth_pct: parseFloat(rawValue),
         });

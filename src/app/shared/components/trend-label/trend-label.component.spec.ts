@@ -191,12 +191,12 @@ describe('TrendLabelComponent', () => {
       expect(iconSpan).toBeTruthy();
     });
 
-    it('icon wrapper has visibility:collapse when showIcon is false', () => {
+    it('icon wrapper has display:none when showIcon is false', () => {
       fixture.componentRef.setInput('data', '1,5');
       fixture.componentRef.setInput('showIcon', false);
       fixture.detectChanges();
       const iconSpan = fixture.nativeElement.querySelector('span.inline-flex');
-      expect(iconSpan.style.visibility).toBe('collapse');
+      expect(iconSpan.style.display).toBe('none');
     });
   });
 
@@ -210,11 +210,11 @@ describe('TrendLabelComponent', () => {
       expect(span).toBeTruthy();
     });
 
-    it('delta span has visibility:collapse when showText is false', () => {
+    it('delta span has display:none when showText is false', () => {
       fixture.componentRef.setInput('showText', false);
       fixture.detectChanges();
       const span = fixture.nativeElement.querySelector('span.text-xs');
-      expect(span.style.visibility).toBe('collapse');
+      expect(span.style.display).toBe('none');
     });
   });
 
@@ -228,11 +228,11 @@ describe('TrendLabelComponent', () => {
       expect(iconSpan).toBeTruthy();
     });
 
-    it('icon wrapper has visibility:collapse when trend is flat', () => {
+    it('icon wrapper has display:none when trend is flat', () => {
       fixture.componentRef.setInput('data', '4,4');
       fixture.detectChanges();
       const iconSpan = fixture.nativeElement.querySelector('span.inline-flex');
-      expect(iconSpan.style.visibility).toBe('collapse');
+      expect(iconSpan.style.display).toBe('none');
     });
 
     it('delta text shows "0.00%" in gray when flat', () => {

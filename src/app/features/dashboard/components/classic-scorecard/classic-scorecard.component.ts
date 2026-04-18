@@ -7,10 +7,8 @@ import {
   effect,
   inject,
   input,
-  output,
   runInInjectionContext,
   signal,
-  untracked,
 } from '@angular/core';
 import { GrowthData } from '../../../../core/models/growth-data.interface';
 import { MarketIndex } from '../../../../core/models/market-index.interface';
@@ -44,11 +42,8 @@ export class ClassicScorecardComponent implements OnInit {
   readonly year = input.required<number>();
   readonly month = input.required<number>();
   readonly uuid = input.required<string>();
-  /** Increment to force a data reload without resetting navigation. */
+  /** Increment to force a data reload. */
   readonly refreshTrigger = input(0);
-
-  // ── Outputs ────────────────────────────────────────────────────────────────
-  readonly yearChange = output<number>();
 
   // ── Writable signals ───────────────────────────────────────────────────────
   readonly isLoading = signal(true);
@@ -58,14 +53,8 @@ export class ClassicScorecardComponent implements OnInit {
   readonly marketIndexes = signal<MarketIndex[]>([]);
   readonly allProfiles = signal<Profile[]>([]);
 
-  // ── Navigation offset ─────────────────────────────────────────────────────
-  readonly offsetMonths = signal(0);
-
   // ── In-flight guard ────────────────────────────────────────────────────────
   private _loadInProgress = false;
-  // True until the first successful data load; enables auto-navigation to last month with data.
-  private _initialLoad = true;
-  private _lastRefreshTrigger: number | null = null;
 
   private matchesProfileGrowthRow(profile: Profile, row: GrowthData): boolean {
     if (row.user_id === profile.id) {
@@ -82,28 +71,10 @@ export class ClassicScorecardComponent implements OnInit {
     return !!workEmail && emailKey === workEmail;
   }
 
-  // ── Display year/month (base inputs + navigation offset) ──────────────────
-  readonly displayYear = computed((): number => {
-    const total = this.year() * 12 + (this.month() - 1) + this.offsetMonths();
-    return Math.floor(total / 12);
-  });
+  // ── Display year/month (controlled by parent selector) ───────────────────
+  readonly displayYear = computed((): number => this.year());
 
-  readonly displayMonth = computed((): number => {
-    const total = this.year() * 12 + (this.month() - 1) + this.offsetMonths();
-    return (total % 12) + 1;
-  });
-
-  readonly canGoNext = computed((): boolean => {
-    const now = new Date();
-    const curYear = now.getFullYear();
-    const curMonth = now.getMonth() + 1;
-    const maxMonth = curMonth === 1 ? 12 : curMonth - 1;
-    const maxYear = curMonth === 1 ? curYear - 1 : curYear;
-    return (
-      this.displayYear() < maxYear ||
-      (this.displayYear() === maxYear && this.displayMonth() < maxMonth)
-    );
-  });
+  readonly displayMonth = computed((): number => this.month());
 
   // ── Derived signals ────────────────────────────────────────────────────────
 
@@ -213,13 +184,6 @@ export class ClassicScorecardComponent implements OnInit {
     return `${this.displayYear()} YTD · ${monthName}`;
   });
 
-  readonly navigationLabel = computed((): string => {
-    const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(
-      new Date(this.displayYear(), this.displayMonth() - 1, 1),
-    );
-    return `${monthName} ${this.displayYear()}`;
-  });
-
   readonly viewedUserProfile = computed((): Profile | null => {
     return this.allProfiles().find((p) => p.id === this.uuid()) ?? null;
   });
@@ -300,59 +264,11 @@ export class ClassicScorecardComponent implements OnInit {
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
-  goToPrevMonth(): void {
-    const prevYear = this.displayYear();
-    this.offsetMonths.update((v) => v - 1);
-    if (this.displayYear() !== prevYear) {
-      this.yearChange.emit(this.displayYear());
-    }
-  }
-
-  goToNextMonth(): void {
-    if (this.canGoNext()) {
-      const prevYear = this.displayYear();
-      this.offsetMonths.update((v) => v + 1);
-      if (this.displayYear() !== prevYear) {
-        this.yearChange.emit(this.displayYear());
-      }
-    }
-  }
-
-  // ── Lifecycle ────────────────────────────────────────────────────────────────────
-
   ngOnInit(): void {
     runInInjectionContext(this.injector, () => {
-      // Reset navigation offset when parent changes the base year/month
       effect(() => {
-        this.year();
-        this.month();
-        untracked(() => {
-          this.offsetMonths.set(0);
-          this._initialLoad = true;
-        });
-      });
-
-      // On explicit refresh (e.g. monthly entry saved), reset to base month/year
-      // only when the trigger value actually changes.
-      effect(() => {
-        const refresh = this.refreshTrigger();
-        untracked(() => {
-          if (this._lastRefreshTrigger === null) {
-            this._lastRefreshTrigger = refresh;
-            return;
-          }
-
-          if (refresh !== this._lastRefreshTrigger) {
-            this.offsetMonths.set(0);
-            this._initialLoad = true;
-            this._lastRefreshTrigger = refresh;
-          }
-        });
-      });
-
-      effect(() => {
-        const y = this.displayYear();
-        const m = this.displayMonth();
+        const y = this.year();
+        const m = this.month();
         const id = this.uuid();
         this.refreshTrigger(); // subscribe so a bump forces a reload
         if (y && m && id) {
@@ -365,8 +281,8 @@ export class ClassicScorecardComponent implements OnInit {
   async loadData(): Promise<void> {
     if (this._loadInProgress) return;
     this._loadInProgress = true;
-    const loadedYear = this.displayYear();
-    const loadedMonth = this.displayMonth();
+    const loadedYear = this.year();
+    const loadedMonth = this.month();
     this.isLoading.set(true);
     this.loadError.set('');
 
@@ -388,38 +304,6 @@ export class ClassicScorecardComponent implements OnInit {
       const userYearData = viewedProfile
         ? allYearData.filter((row) => this.matchesProfileGrowthRow(viewedProfile, row))
         : [];
-      const hasDataForMonth = userYearData.some((d) => d.month === loadedMonth);
-
-      if (!hasDataForMonth && this._initialLoad) {
-        // Find the most recent month with data in the same year (before the target month).
-        const sameYearMonths = [...new Set(userYearData.map((d) => d.month))].filter(
-          (m) => m < loadedMonth,
-        );
-        if (sameYearMonths.length > 0) {
-          const targetMonth = Math.max(...sameYearMonths);
-          const base = this.year() * 12 + (this.month() - 1);
-          this.offsetMonths.set(loadedYear * 12 + (targetMonth - 1) - base);
-          return; // finally + effect will trigger loadData for the new month
-        }
-
-        // No earlier data in the same year — try one year back.
-        if (loadedYear > 2000) {
-          const prevYearDataAll = await this.growthDataService.getGrowthDataForYear(loadedYear - 1);
-          const prevYearData = viewedProfile
-            ? prevYearDataAll.filter((row) => this.matchesProfileGrowthRow(viewedProfile, row))
-            : [];
-          const prevYearMonths = [...new Set(prevYearData.map((d) => d.month))];
-          if (prevYearMonths.length > 0) {
-            const targetMonth = Math.max(...prevYearMonths);
-            const base = this.year() * 12 + (this.month() - 1);
-            this.offsetMonths.set((loadedYear - 1) * 12 + (targetMonth - 1) - base);
-            return; // finally + effect will trigger loadData for the new month
-          }
-        }
-        // No data found anywhere — fall through and display the empty state.
-      }
-
-      this._initialLoad = false;
 
       const [allMonthData, marketData] = await Promise.all([
         this.growthDataService.getGrowthDataForYearMonth(loadedYear, loadedMonth),
@@ -435,8 +319,8 @@ export class ClassicScorecardComponent implements OnInit {
     } finally {
       this._loadInProgress = false;
       this.isLoading.set(false);
-      // If the user navigated while loading was in progress, trigger a fresh load.
-      if (this.displayYear() !== loadedYear || this.displayMonth() !== loadedMonth) {
+      // If inputs changed while loading was in progress, trigger a fresh load.
+      if (this.year() !== loadedYear || this.month() !== loadedMonth) {
         this.loadData();
       }
     }
