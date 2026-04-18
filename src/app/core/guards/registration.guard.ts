@@ -8,7 +8,7 @@ export const registrationGuard: CanActivateFn = async () => {
   const profileService = inject(ProfileService);
   const router = inject(Router);
 
-  const session = await auth.getSession();
+  const session = await auth.getSession({ retries: 3, retryDelayMs: 150 });
   if (!session) {
     return router.createUrlTree(['/login']);
   }

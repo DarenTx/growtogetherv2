@@ -2,6 +2,11 @@ import { inject, Injectable } from '@angular/core';
 import { AuthChangeEvent, Session, Subscription } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT_TOKEN } from './supabase.service';
 
+type SessionReadOptions = {
+  retries?: number;
+  retryDelayMs?: number;
+};
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly client = inject(SUPABASE_CLIENT_TOKEN);
@@ -15,15 +20,30 @@ export class AuthService {
   /** Redirect URL used by Magic Link emails */
   readonly authCallbackUrl = `${window.location.origin}/auth/callback`;
 
-  async getSession(): Promise<Session | null> {
-    this.logger.debug('Getting session');
-    const { data, error } = await this.client.auth.getSession();
-    if (error) {
-      this.logger.error('getSession failed', error);
-      throw error;
+  async getSession(options?: SessionReadOptions): Promise<Session | null> {
+    const retries = Math.max(0, options?.retries ?? 0);
+    const retryDelayMs = Math.max(0, options?.retryDelayMs ?? 0);
+
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      this.logger.debug('Getting session', { attempt: attempt + 1, retries: retries + 1 });
+      const { data, error } = await this.client.auth.getSession();
+      if (error) {
+        this.logger.error('getSession failed', error);
+        throw error;
+      }
+
+      if (data.session) {
+        this.logger.debug('Session retrieved', 'authenticated');
+        return data.session;
+      }
+
+      if (attempt < retries) {
+        await this.delay(retryDelayMs);
+      }
     }
-    this.logger.debug('Session retrieved', data.session ? 'authenticated' : 'unauthenticated');
-    return data.session;
+
+    this.logger.debug('Session retrieved', 'unauthenticated');
+    return null;
   }
 
   async signInWithEmail(email: string): Promise<void> {
@@ -128,5 +148,15 @@ export class AuthService {
       callback(event, session);
     });
     return data.subscription;
+  }
+
+  private async delay(milliseconds: number): Promise<void> {
+    if (milliseconds <= 0) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      window.setTimeout(() => resolve(), milliseconds);
+    });
   }
 }

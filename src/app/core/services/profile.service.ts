@@ -16,7 +16,7 @@ export class ProfileService {
 
   async getProfile(): Promise<Profile | null> {
     this.logger.debug('Fetching profile');
-    const session = await this.auth.getSession();
+    const session = await this.auth.getSession({ retries: 3, retryDelayMs: 150 });
     if (!session) {
       this.logger.warn('getProfile called without active session');
       return null;

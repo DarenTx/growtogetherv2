@@ -342,6 +342,13 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('de-duplicates by user_id taking first by bank_name', async () => {
+        mockProfile['getRegisteredProfiles'] = vi
+          .fn()
+          .mockResolvedValue([
+            makeProfile({ id: 'u1', work_email: 'u1@example.com' }),
+            makeProfile({ id: 'u2', work_email: 'u2@example.com' }),
+          ]);
+
         const rows = [
           makeGrowthRecord({ user_id: 'u1', bank_name: 'Edward Jones', growth_pct: 1.0 }),
           makeGrowthRecord({ user_id: 'u1', bank_name: 'Fidelity Investments', growth_pct: 2.0 }),
@@ -356,7 +363,13 @@ describe('ClassicScorecardComponent', () => {
         expect(map.get('u2')).toBe(3.0);
       });
 
-      it('keeps rows with null user_id using email-key fallback', async () => {
+      it('keeps only rows that resolve to registered profiles', async () => {
+        mockProfile['getRegisteredProfiles'] = vi
+          .fn()
+          .mockResolvedValue([
+            makeProfile({ id: MOCK_SESSION.user.id, work_email: 'user@example.com' }),
+          ]);
+
         const rows = [
           makeGrowthRecord({ user_id: null }),
           makeGrowthRecord({ user_id: 'u1', growth_pct: 2.0 }),
@@ -364,9 +377,9 @@ describe('ClassicScorecardComponent', () => {
         mockGrowthData['getGrowthDataForYearMonth'] = vi.fn().mockResolvedValue(rows);
         await setupComponent(2025, 6);
         const map = component.perUserMonthData();
-        expect(map.size).toBe(2);
-        expect(map.has('u1')).toBe(true);
-        expect(map.has('email:user@example.com')).toBe(true);
+        expect(map.size).toBe(1);
+        expect(map.has(MOCK_SESSION.user.id)).toBe(true);
+        expect(map.has('u1')).toBe(false);
       });
     });
 
@@ -377,6 +390,13 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('calculates mean correctly', async () => {
+        mockProfile['getRegisteredProfiles'] = vi
+          .fn()
+          .mockResolvedValue([
+            makeProfile({ id: 'u1', work_email: 'u1@example.com' }),
+            makeProfile({ id: 'u2', work_email: 'u2@example.com' }),
+          ]);
+
         const rows = [
           makeGrowthRecord({ user_id: 'u1', growth_pct: 2.0 }),
           makeGrowthRecord({ user_id: 'u2', growth_pct: 4.0 }),
@@ -394,6 +414,14 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('returns 1 for highest growth', async () => {
+        mockProfile['getRegisteredProfiles'] = vi
+          .fn()
+          .mockResolvedValue([
+            makeProfile({ id: MOCK_SESSION.user.id, work_email: 'user@example.com' }),
+            makeProfile({ id: 'u2', work_email: 'u2@example.com' }),
+            makeProfile({ id: 'u3', work_email: 'u3@example.com' }),
+          ]);
+
         const rows = [
           makeGrowthRecord({ user_id: MOCK_SESSION.user.id, growth_pct: 5.0 }),
           makeGrowthRecord({ user_id: 'u2', growth_pct: 3.0 }),
@@ -408,6 +436,14 @@ describe('ClassicScorecardComponent', () => {
       });
 
       it('returns correct rank for middle position', async () => {
+        mockProfile['getRegisteredProfiles'] = vi
+          .fn()
+          .mockResolvedValue([
+            makeProfile({ id: MOCK_SESSION.user.id, work_email: 'user@example.com' }),
+            makeProfile({ id: 'u1', work_email: 'u1@example.com' }),
+            makeProfile({ id: 'u3', work_email: 'u3@example.com' }),
+          ]);
+
         const rows = [
           makeGrowthRecord({ user_id: 'u1', growth_pct: 5.0 }),
           makeGrowthRecord({ user_id: MOCK_SESSION.user.id, growth_pct: 3.0 }),

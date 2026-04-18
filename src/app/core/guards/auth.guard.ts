@@ -6,7 +6,7 @@ export const authGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  const session = await auth.getSession();
+  const session = await auth.getSession({ retries: 3, retryDelayMs: 150 });
   if (!session) {
     return router.createUrlTree(['/login']);
   }

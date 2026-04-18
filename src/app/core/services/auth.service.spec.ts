@@ -58,6 +58,26 @@ describe('AuthService', () => {
       });
       await expect(service.getSession()).rejects.toThrow('Network error');
     });
+
+    it('retries when no session initially and later succeeds', async () => {
+      mockGetSession
+        .mockResolvedValueOnce({ data: { session: null }, error: null })
+        .mockResolvedValueOnce({ data: { session: { user: { id: 'u2' } } }, error: null });
+
+      const session = await service.getSession({ retries: 1, retryDelayMs: 0 });
+
+      expect(session).toEqual({ user: { id: 'u2' } });
+      expect(mockGetSession).toHaveBeenCalledTimes(2);
+    });
+
+    it('returns null after retries are exhausted', async () => {
+      mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
+
+      const session = await service.getSession({ retries: 2, retryDelayMs: 0 });
+
+      expect(session).toBeNull();
+      expect(mockGetSession).toHaveBeenCalledTimes(3);
+    });
   });
 
   describe('signInWithEmail', () => {

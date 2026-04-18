@@ -51,7 +51,7 @@ export class AuthCallbackComponent implements OnInit, OnDestroy {
 
   private async checkExistingSession(): Promise<void> {
     try {
-      const session = await this.auth.getSession();
+      const session = await this.auth.getSession({ retries: 8, retryDelayMs: 150 });
       if (session) {
         await this.handleSignedIn();
       } else {

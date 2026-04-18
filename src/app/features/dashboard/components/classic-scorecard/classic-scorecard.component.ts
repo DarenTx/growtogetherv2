@@ -115,31 +115,38 @@ export class ClassicScorecardComponent implements OnInit {
     const rows = [...this.allPlayersMonth()].sort((a, b) => a.bank_name.localeCompare(b.bank_name));
     const profiles = this.allProfiles();
 
-    const personalEmailToProfileId = new Map<string, string>();
-    const workEmailToProfileId = new Map<string, string>();
+    const profileById = new Map<string, Profile>();
+    const profileByEmail = new Map<string, Profile>();
     for (const profile of profiles) {
+      profileById.set(profile.id, profile);
+
       const personalEmail = profile.personal_email?.toLowerCase();
       if (personalEmail) {
-        personalEmailToProfileId.set(personalEmail, profile.id);
+        profileByEmail.set(personalEmail, profile);
       }
 
       const workEmail = profile.work_email?.toLowerCase();
       if (workEmail) {
-        workEmailToProfileId.set(workEmail, profile.id);
+        profileByEmail.set(workEmail, profile);
       }
     }
 
     for (const r of rows) {
       const emailKey = r.email_key?.toLowerCase();
-      const profileId = r.user_id
-        ? r.user_id
+      const profile = r.user_id
+        ? profileById.get(r.user_id)
         : emailKey
-          ? (personalEmailToProfileId.get(emailKey) ?? workEmailToProfileId.get(emailKey))
+          ? profileByEmail.get(emailKey)
           : undefined;
-      const resolvedKey = profileId ?? (emailKey ? `email:${emailKey}` : `row:${r.id}`);
 
-      if (!result.has(resolvedKey)) {
-        result.set(resolvedKey, r.growth_pct);
+      // Keep ranking math aligned with the rankings grid by counting only rows
+      // that resolve to a registered profile.
+      if (!profile) {
+        continue;
+      }
+
+      if (!result.has(profile.id)) {
+        result.set(profile.id, r.growth_pct);
       }
     }
     return result;
